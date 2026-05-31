@@ -34,7 +34,7 @@ from .labels import (
     quarter_index,
     to_wide,
 )
-from .registry import log_run
+from .registry import CHALLENGER_ALIAS, log_run, register_model_version, set_alias
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -424,30 +424,53 @@ def train_model(
         backend=backend,
         min_support=min_support,
     )
+    feature_hash = feature_list_hash(feature_list)
+    holdout_quarter = next_quarter(reference_quarter)
+    model_path = paths["model_path"]
     mlflow_run_id = log_run(
         params={
             "run_id": run_id,
             "reference_quarter": reference_quarter,
-            "holdout_quarter": next_quarter(reference_quarter),
+            "holdout_quarter": holdout_quarter,
             "backend": backend,
             "seed": seed,
             "min_support": min_support,
             "top_n": top_n,
+            "model_path": str(model_path),
         },
         metrics=metrics,
+        feature_list_hash=feature_hash,
+        model_role=CHALLENGER_ALIAS,
+        run_name=run_id,
     )
+    mlflow_model_version = None
+    if mlflow_run_id:
+        mlflow_model_version = register_model_version(
+            mlflow_run_id,
+            tags={
+                "feature_list_hash": feature_hash,
+                "data_cutoff": holdout_quarter,
+                "reference_quarter": reference_quarter,
+                "min_support": min_support,
+                "backend": backend,
+                "model_path": str(model_path),
+                "model_artifact_mode": "local_model_path",
+            },
+        )
+        set_alias(CHALLENGER_ALIAS, mlflow_model_version)
 
     summary = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "run_id": run_id,
         "reference_quarter": reference_quarter,
-        "holdout_quarter": next_quarter(reference_quarter),
+        "holdout_quarter": holdout_quarter,
         "metrics": metrics,
-        "feature_list_hash": feature_list_hash(feature_list),
+        "feature_list_hash": feature_hash,
         "product_catalog": catalog,
         "model_artifact": MODEL_FILE,
         "meta_artifact": META_FILE,
         "mlflow_run_id": mlflow_run_id,
+        "mlflow_model_version": mlflow_model_version,
     }
     _write_train_report(summary)
 
@@ -456,6 +479,8 @@ def train_model(
         "meta_path": str(paths["meta_path"]),
         "metrics": metrics,
         "run_id": run_id,
+        "mlflow_run_id": mlflow_run_id,
+        "mlflow_model_version": mlflow_model_version,
     }
 
 

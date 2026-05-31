@@ -24,7 +24,7 @@ down:
 leak-check:
 	@set -eu; \
 	echo "checking gitignore gates"; \
-	for path in data/real.parquet models/model.pkl .env mlruns/; do \
+	for path in data/real.parquet models/model.pkl .env mlruns/ mlflow.db mlflow/; do \
 		if ! git check-ignore -q -- "$$path"; then \
 			echo "$$path must be ignored"; \
 			exit 1; \
