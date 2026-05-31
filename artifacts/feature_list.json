@@ -1,0 +1,83 @@
+{
+  "version": "1",
+  "generated_at": "2026-05-31 21:47:49 MSK",
+  "entity_keys": [
+    "client_id",
+    "quarter"
+  ],
+  "features": [
+    {
+      "name": "seg_SEG_0",
+      "dtype": "int8"
+    },
+    {
+      "name": "seg_SEG_1",
+      "dtype": "int8"
+    },
+    {
+      "name": "seg_SEG_2",
+      "dtype": "int8"
+    },
+    {
+      "name": "seg_SEG_3",
+      "dtype": "int8"
+    },
+    {
+      "name": "seg_SEG_4",
+      "dtype": "int8"
+    },
+    {
+      "name": "seg_SEG_5",
+      "dtype": "int8"
+    },
+    {
+      "name": "seg_SEG_6",
+      "dtype": "int8"
+    },
+    {
+      "name": "recency_quarters",
+      "dtype": "int64"
+    },
+    {
+      "name": "freq_events_total",
+      "dtype": "int64"
+    },
+    {
+      "name": "freq_events_last_4q",
+      "dtype": "int64"
+    },
+    {
+      "name": "monetary_proxy_count",
+      "dtype": "int64"
+    },
+    {
+      "name": "affinity_fam_software_box",
+      "dtype": "int64"
+    },
+    {
+      "name": "affinity_fam_hardware_license",
+      "dtype": "int64"
+    },
+    {
+      "name": "affinity_fam_infra",
+      "dtype": "int64"
+    },
+    {
+      "name": "affinity_fam_software_cloud",
+      "dtype": "int64"
+    },
+    {
+      "name": "affinity_fam_addon",
+      "dtype": "int64"
+    },
+    {
+      "name": "tenure_quarters",
+      "dtype": "int64"
+    },
+    {
+      "name": "dsl_month_lag",
+      "dtype": "int64"
+    }
+  ],
+  "hash": "b29e3f6fd325627e3b77475f1c0148ce298fa2a4c68d8cc2f8af75961ab4c98a"
+}

@@ -4,6 +4,8 @@
 # data/sample_synth.parquet is allowed in git because it is synthetic.
 # Every other parquet under data/ is local-only and ignored.
 data/*.parquet
+data/**/*.parquet
+data/feature_store/
 !data/sample_synth.parquet
 
 # Local model artifacts are not committed.
