@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-31T19:24:12.811669+00:00",
-  "run_id": "nbo_train_20260531_192405",
+  "generated_at": "2026-05-31T20:05:03.117372+00:00",
+  "run_id": "nbo_train_20260531_200456",
   "reference_quarter": "2021Q4",
   "holdout_quarter": "2022Q1",
   "metrics": {
