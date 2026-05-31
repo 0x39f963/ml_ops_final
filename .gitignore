@@ -17,6 +17,9 @@ models/*
 *.pkl
 *.joblib
 mlruns/
+mlflow/
+mlflow.db
+*.db-journal
 
 # Local secrets and runtime config.
 .env

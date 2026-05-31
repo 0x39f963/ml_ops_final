@@ -1,0 +1,35 @@
+# Generated at: 2026-05-31 23:10:05 MSK
+
+services:
+  mlflow:
+    image: python:3.12-slim
+    container_name: ml005_mlflow
+    command: >
+      /bin/sh -lc "
+      pip install --no-cache-dir mlflow==2.22.5 &&
+      mlflow server
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --serve-artifacts
+      --artifacts-destination /mlflow/artifacts
+      --default-artifact-root mlflow-artifacts:/
+      --host 0.0.0.0
+      --port 5000"
+    ports:
+      - "${MLFLOW_PORT:-15000}:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://localhost:5000/health').status == 200 else 1)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
+
+volumes:
+  mlflow_data:
