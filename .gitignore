@@ -1,0 +1,39 @@
+# Generated at: 2026-05-31 20:37:33 MSK
+
+# Synthetic stub policy:
+# data/sample_synth.parquet is allowed in git because it is synthetic.
+# Every other parquet under data/ is local-only and ignored.
+data/*.parquet
+!data/sample_synth.parquet
+
+# Local model artifacts are not committed.
+models/*
+!models/.gitkeep
+*.pkl
+*.joblib
+mlruns/
+
+# Local secrets and runtime config.
+.env
+
+# Python cache and test cache.
+__pycache__/
+*/__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Terraform artifacts for future infra work.
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+tfplan
+*.tfplan
+crash.log
+crash.*.log
+
+# Airflow and runtime logs for future DAG work.
+airflow_home/
+logs/

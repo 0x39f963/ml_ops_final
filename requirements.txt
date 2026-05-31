@@ -1,0 +1,17 @@
+# Generated at: 2026-05-31 20:37:33 MSK
+#
+# Dev/runtime baseline. Airflow and Terraform are installed separately by
+# their containers or CLI in later branches.
+
+pandas>=2.2
+pyarrow>=15.0
+numpy>=1.26
+scikit-learn>=1.4
+lightgbm>=4.3
+fastapi>=0.110
+uvicorn>=0.29
+mlflow>=2.12
+evidently>=0.4
+prometheus-client>=0.20
+streamlit>=1.33
+pytest>=8.1
