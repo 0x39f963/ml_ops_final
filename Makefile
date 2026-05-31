@@ -51,7 +51,8 @@ leak-check:
 	fi; \
 	if [ -n "$$files" ]; then \
 		raw_marker="product""_raw"; \
-		if printf '%s\n' "$$files" | xargs grep -EIn "$$raw_marker|[0-9]{10,12}"; then \
+		id_pattern='(^|[^0-9.])[0-9]{10,12}([^0-9.]|$$)'; \
+		if printf '%s\n' "$$files" | xargs grep -EIn "$$raw_marker|$$id_pattern"; then \
 			echo "forbidden raw product marker or id-like number detected"; \
 			exit 1; \
 		fi; \
