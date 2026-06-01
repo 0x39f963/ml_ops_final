@@ -38,9 +38,11 @@ venv/
 *.tfstate
 *.tfstate.*
 tfplan
+tfdestroy
 *.tfplan
 crash.log
 crash.*.log
+.infra_artifacts/
 
 # Airflow and runtime logs for future DAG work.
 airflow_home/

@@ -1,0 +1,61 @@
+# Generated at: 2026-06-01 13:41:00 MSK
+
+name: ML005 CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Python compile
+        run: python -m compileall -q src dags
+
+      - name: Synthetic smoke tests
+        # Training must NOT run in CI. Airflow owns periodic train/evaluate/promote.
+        run: |
+          python -m pytest -q \
+            tests/test_features.py \
+            tests/test_evaluate.py \
+            tests/test_api.py \
+            tests/test_dag_import.py \
+            tests/test_registry.py \
+            tests/test_drift_report.py
+
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform fmt
+        run: terraform fmt -check
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan
+        run: terraform plan -no-color
