@@ -101,6 +101,22 @@ docker compose up -d mlflow
 python -m src.registry --show
 ```
 
+### сервинг (api)
+
+fastapi-сервис поверх champion-модели (читается по mlflow alias, без хардкода версии).
+
+- `GET /health` - статус, версия модели, data_cutoff.
+- `POST /score` - по client_id на дату отдает топ-10 продуктов `{product, p, decision, confidence}` + caveats.
+- `POST /batch-score` - то же списком.
+- `GET /model-info` - версия / метрики / feature_list_hash.
+- `GET /metrics` - prometheus-формат (latency, число запросов, ошибки, распределение score).
+- parity: фичи считаю тем же кодом и тем же feature_list.json, что train. в request-path нет похода за свежими данными (тяжелый расчет вынесен в feature store).
+- честный not_scorable: клиент без инн / без записи -> score=null, без выдуманного топ-10.
+
+```bash
+docker compose up -d --build nbo-api   # http://localhost:18000/health
+```
+
 ---
 
 ## mdd / adr (latency)
@@ -162,7 +178,6 @@ docker compose up -d mlflow   # ui http://localhost:15000
 
 ## в разработке
 
-- serving api на fastapi: `/health`, `/score` (топ-10 по client_id), `/model-info`, `/metrics`
 - retraining dag в airflow: sensor -> validate -> features -> train -> evaluate -> gate -> register/skip
 - мониторинг: prometheus + grafana + evidently (drift), полная таблица sli/slo на 3 уровнях
 - iac terraform + ci/cd (github actions: lint / tests / terraform plan)
