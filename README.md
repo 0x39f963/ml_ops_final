@@ -25,9 +25,11 @@
 ml005/
 |-- README.md
 |-- requirements.txt
-|-- docker-compose.yml        # mlflow; остальные сервисы в инфра-части
+|-- docker-compose.yml        # полный стек: mlflow / nbo-api / airflow / prometheus / grafana / node-exporter / minio
+|-- Dockerfile                # образ nbo-api
 |-- Makefile                  # data / test / up / down / leak-check
 |-- .env.example
+|-- .github/workflows/ci.yml  # ci: checks (compile + smoke) + terraform
 |-- src/
 |   |-- gen_synthetic.py      # генератор синтетики (для git/ci)
 |   |-- data_wrappers.py      # доступ к локальным данным (реальные - вне git)
@@ -35,17 +37,22 @@ ml005/
 |   |-- labels.py             # таргет на Q+1
 |   |-- train.py              # champion (popularity) + challenger (supervised)
 |   |-- evaluate.py           # офлайн-метрики на holdout
-|   `-- registry.py           # mlflow alias champion/challenger
+|   |-- registry.py           # mlflow alias champion/challenger
+|   `-- serve_api.py          # fastapi /health /score /batch-score /model-info /metrics
+|-- dags/
+|   `-- nbo_retrain_dag.py    # airflow: sensor -> validate -> train -> evaluate -> gate -> promote/skip
+|-- infra/                    # terraform (local provider) + cloud-заглушка
+|-- monitoring/               # prometheus.yml / grafana provisioning / evidently drift
 |-- artifacts/
 |   `-- feature_list.json     # контракт фич (порядок + hash), общий для train/serve
 |-- notebooks/
 |   `-- mdd_latency.ipynb     # mdd по latency
-|-- adr/
-|   `-- 0001-latency-mdd-decision.md
-|-- reports/                  # верификационные логи + метрики (без реальных данных)
-|-- tests/                    # pytest (features / train / eval / registry)
+|-- adr/0001-latency-mdd-decision.md
+|-- docs/sli_slo.md           # sli/slo на 3 уровнях
+|-- reports/                  # верификационные логи + метрики + terraform planы (без реальных данных)
+|-- tests/                    # pytest (features / eval / registry / api / dag / drift)
 |-- data/                     # только sample_synth.parquet (синтетика)
-`-- dags/  infra/  monitoring/  demo/  screenshots/   # сервинг / инфра / мониторинг / demo / скрины
+`-- screenshots/              # evidence-скрины с localhost
 ```
 
 ---
@@ -97,7 +104,7 @@ events -> features (pit cutoff) -> train: champion + challenger -> evaluate (hol
 
 ```bash
 docker compose up -d mlflow
-# ui: http://localhost:15000
+# ui: http://localhost:5000
 python -m src.registry --show
 ```
 
@@ -114,7 +121,7 @@ fastapi-сервис поверх champion-модели (читается по m
 - честный not_scorable: клиент без инн / без записи -> score=null, без выдуманного топ-10.
 
 ```bash
-docker compose up -d --build nbo-api   # http://localhost:18000/health
+docker compose up -d --build nbo-api   # http://localhost:8000/health
 ```
 
 ### переобучение (airflow dag)
@@ -179,7 +186,7 @@ cd infra && terraform init && terraform validate && terraform plan
 | модель/данные | drift (psi / evidently) | ниже порога | выше 2x порога |
 | бизнес | hit-rate@10 | `>= baseline` | `-25%` |
 
-полную таблицу на 3 уровнях довешу вместе с мониторингом.
+это краткая выжимка. полная таблица на 3 уровнях с источником каждой метрики (promql / evidently / dag-state) и incident-action - в [docs/sli_slo.md](docs/sli_slo.md). числовые пороги [assumption] до baseline-прогона.
 
 ---
 
@@ -206,7 +213,7 @@ make leak-check
 .venv/bin/python -m src.evaluate
 
 # mlflow registry
-docker compose up -d mlflow   # ui http://localhost:15000
+docker compose up -d mlflow   # ui http://localhost:5000
 ```
 
 ---
