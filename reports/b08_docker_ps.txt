@@ -1,0 +1,9 @@
+Generated at: 2026-06-01 13:08:10 MSK
+
+NAME                  IMAGE                              COMMAND                  SERVICE         CREATED          STATUS                  PORTS
+ml005_airflow         apache/airflow:2.10.5-python3.12   "/usr/bin/dumb-init …"   airflow         3 hours ago      Up 3 hours              0.0.0.0:18080->8080/tcp, [::]:18080->8080/tcp
+ml005_grafana         grafana/grafana:11.2.2             "/run.sh"                grafana         30 seconds ago   Up 28 seconds           0.0.0.0:3000->3000/tcp, :::3000->3000/tcp
+ml005_mlflow          python:3.12-slim                   "/bin/sh -lc ' pip i…"   mlflow          14 hours ago     Up 14 hours (healthy)   0.0.0.0:15000->5000/tcp, [::]:15000->5000/tcp
+ml005_node_exporter   prom/node-exporter:v1.8.2          "/bin/node_exporter …"   node-exporter   30 seconds ago   Up 29 seconds           0.0.0.0:9100->9100/tcp, :::9100->9100/tcp
+ml005_prometheus      prom/prometheus:v2.54.1            "/bin/prometheus --c…"   prometheus      30 seconds ago   Up 28 seconds           0.0.0.0:9090->9090/tcp, :::9090->9090/tcp
+nbo-api               ml005-nbo-api                      "uvicorn src.serve_a…"   nbo-api         4 hours ago      Up 4 hours (healthy)    0.0.0.0:18000->8000/tcp, [::]:18000->8000/tcp

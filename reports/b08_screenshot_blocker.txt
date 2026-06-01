@@ -1,0 +1,21 @@
+Generated at: 2026-06-01 13:09:44 MSK
+
+b08 browser screenshot blocker
+
+The local playwright-ui-test skill was selected for UI screenshots. Existing Playwright tooling was checked in the repository and active PATH:
+
+- `rg --files -g 'package.json' -g '*playwright*' -g 'ui-checks/**'` -> no files found
+- `command -v playwright` -> no executable found
+- `ml005/node_modules` -> absent
+- `ml005/ui-checks` -> absent
+
+Per the skill rule, do not install Playwright, browser binaries, npm packages, or Python packages without explicit user confirmation. Browser screenshots were not produced in this run.
+
+Replacement evidence collected through APIs:
+
+- `reports/b08_prometheus_targets.json`
+- `reports/b08_prometheus_alert_rules.json`
+- `reports/b08_grafana_search.json`
+- `reports/b08_prometheus_rps_query.json`
+- `reports/b08_prometheus_latency_query.json`
+- `reports/b08_prometheus_drift_query.json`
