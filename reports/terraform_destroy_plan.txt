@@ -1,0 +1,114 @@
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  - destroy
+
+Terraform will perform the following actions:
+
+  # local_file.airflow_manifest will be destroyed
+  - resource "local_file" "airflow_manifest" {
+      - content              = <<-EOT
+            dag_id=nbo_retrain_pipeline
+            dag_file=dags/nbo_retrain_dag.py
+            sensor=S3KeySensor_or_local_FileSensor
+            sensor_mode_env=NBO_USE_S3_SENSOR
+        EOT -> null
+      - content_base64sha256 = "[hash-redacted]" -> null
+      - content_base64sha512 = "[hash-redacted]" -> null
+      - content_md5          = "[hash-redacted]" -> null
+      - content_sha1         = "[hash-redacted]" -> null
+      - content_sha256       = "[hash-redacted]" -> null
+      - content_sha512       = "[hash-redacted]" -> null
+      - directory_permission = "0777" -> null
+      - file_permission      = "0777" -> null
+      - filename             = "../.infra_artifacts/dev/airflow_manifest.txt" -> null
+      - id                   = "[hash-redacted]" -> null
+    }
+
+  # local_file.api_manifest will be destroyed
+  - resource "local_file" "api_manifest" {
+      - content              = <<-EOT
+            service=nbo-api
+            health=/health
+            score=/score
+            batch_score=/batch-score
+            metrics=/metrics
+        EOT -> null
+      - content_base64sha256 = "[hash-redacted]" -> null
+      - content_base64sha512 = "[hash-redacted]" -> null
+      - content_md5          = "[hash-redacted]" -> null
+      - content_sha1         = "[hash-redacted]" -> null
+      - content_sha256       = "[hash-redacted]" -> null
+      - content_sha512       = "[hash-redacted]" -> null
+      - directory_permission = "0777" -> null
+      - file_permission      = "0777" -> null
+      - filename             = "../.infra_artifacts/dev/api_manifest.txt" -> null
+      - id                   = "[hash-redacted]" -> null
+    }
+
+  # local_file.mlflow_manifest will be destroyed
+  - resource "local_file" "mlflow_manifest" {
+      - content              = <<-EOT
+            tracking_uri=file:../mlruns
+            artifact_store=../models
+            aliases=champion,challenger
+        EOT -> null
+      - content_base64sha256 = "[hash-redacted]" -> null
+      - content_base64sha512 = "[hash-redacted]" -> null
+      - content_md5          = "[hash-redacted]" -> null
+      - content_sha1         = "[hash-redacted]" -> null
+      - content_sha256       = "[hash-redacted]" -> null
+      - content_sha512       = "[hash-redacted]" -> null
+      - directory_permission = "0777" -> null
+      - file_permission      = "0777" -> null
+      - filename             = "../.infra_artifacts/dev/mlflow_manifest.txt" -> null
+      - id                   = "[hash-redacted]" -> null
+    }
+
+  # local_file.pipeline_contract_manifest will be destroyed
+  - resource "local_file" "pipeline_contract_manifest" {
+      - content              = <<-EOT
+            s3_bucket=nbo-batches
+            s3_key_template=incoming/{{ ds }}/scoring_batch.parquet
+            feature_list_source=artifacts/feature_list.json
+            gate=precision@10_new>=precision@10_champion
+            branch_join_trigger_rule=none_failed_min_one_success
+        EOT -> null
+      - content_base64sha256 = "[hash-redacted]" -> null
+      - content_base64sha512 = "[hash-redacted]" -> null
+      - content_md5          = "[hash-redacted]" -> null
+      - content_sha1         = "[hash-redacted]" -> null
+      - content_sha256       = "[hash-redacted]" -> null
+      - content_sha512       = "[hash-redacted]" -> null
+      - directory_permission = "0777" -> null
+      - file_permission      = "0777" -> null
+      - filename             = "../.infra_artifacts/dev/pipeline_contract_manifest.txt" -> null
+      - id                   = "[hash-redacted]" -> null
+    }
+
+  # local_file.storage_manifest will be destroyed
+  - resource "local_file" "storage_manifest" {
+      - content              = <<-EOT
+            bucket=nbo-batches
+            path=incoming/YYYY-MM-DD/scoring_batch.parquet
+        EOT -> null
+      - content_base64sha256 = "[hash-redacted]" -> null
+      - content_base64sha512 = "[hash-redacted]" -> null
+      - content_md5          = "[hash-redacted]" -> null
+      - content_sha1         = "[hash-redacted]" -> null
+      - content_sha256       = "[hash-redacted]" -> null
+      - content_sha512       = "[hash-redacted]" -> null
+      - directory_permission = "0777" -> null
+      - file_permission      = "0777" -> null
+      - filename             = "../.infra_artifacts/dev/storage_manifest.txt" -> null
+      - id                   = "[hash-redacted]" -> null
+    }
+
+Plan: 0 to add, 0 to change, 5 to destroy.
+
+Changes to Outputs:
+  - airflow_manifest_path           = "../.infra_artifacts/dev/airflow_manifest.txt" -> null
+  - api_manifest_path               = "../.infra_artifacts/dev/api_manifest.txt" -> null
+  - mlflow_manifest_path            = "../.infra_artifacts/dev/mlflow_manifest.txt" -> null
+  - pipeline_contract_manifest_path = "../.infra_artifacts/dev/pipeline_contract_manifest.txt" -> null
+  - storage_manifest_path           = "../.infra_artifacts/dev/storage_manifest.txt" -> null
