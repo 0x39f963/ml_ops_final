@@ -1,0 +1,25 @@
+# Generated at: 2026-06-01 07:30:04 MSK
+
+.env
+.git
+.pytest_cache
+.venv
+__pycache__
+*/__pycache__
+*.pyc
+
+data/*.parquet
+data/**/*.parquet
+!data/sample_synth.parquet
+data/feature_store/
+
+models/*
+mlruns/
+mlflow/
+mlflow.db
+*.pkl
+*.joblib
+
+reports/*.html
+screenshots/*.png
+screenshots/*.jpg

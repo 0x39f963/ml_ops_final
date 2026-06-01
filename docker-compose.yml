@@ -31,5 +31,44 @@ services:
       retries: 10
       start_period: 120s
 
+  nbo-api:
+    build: .
+    container_name: nbo-api
+    command: uvicorn src.serve_api:app --host 0.0.0.0 --port 8000
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_MODEL_NAME: ${MLFLOW_MODEL_NAME:-nbo_topn}
+      FEATURE_STORE_DIR: ${FEATURE_STORE_DIR:-data/feature_store}
+      MODEL_DIR: ${MODEL_DIR:-/app/models}
+      TOP_N: ${TOP_N:-10}
+      DATA_CUTOFF: ${DATA_CUTOFF:-}
+      SCORE_DECISION_THRESHOLD: ${SCORE_DECISION_THRESHOLD:-0.5}
+      MODEL_REFRESH_ON_REQUEST: ${MODEL_REFRESH_ON_REQUEST:-false}
+    ports:
+      - "${API_PORT:-18000}:8000"
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    volumes:
+      - ./artifacts:/app/artifacts:ro
+      - ./data:/app/data:ro
+      - ./models:/app/models:ro
+      - ./reports:/app/reports
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status == 200 else 1)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
 volumes:
   mlflow_data:
