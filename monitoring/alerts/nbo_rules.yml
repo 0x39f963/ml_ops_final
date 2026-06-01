@@ -1,0 +1,35 @@
+# Generated at: 2026-06-01 13:00:25 MSK
+
+groups:
+  - name: nbo-recording
+    rules:
+      - record: nbo:score_latency_p95_seconds
+        expr: histogram_quantile(0.95, sum(rate(nbo_request_latency_seconds_bucket{job="nbo-api",endpoint="/score"}[5m])) by (le))
+
+      - record: nbo:score_latency_p99_seconds
+        expr: histogram_quantile(0.99, sum(rate(nbo_request_latency_seconds_bucket{job="nbo-api",endpoint="/score"}[5m])) by (le))
+
+      - record: nbo:score_error_rate
+        expr: sum(rate(nbo_errors_total{job="nbo-api",endpoint="/score"}[5m])) / clamp_min(sum(rate(nbo_requests_total{job="nbo-api",endpoint="/score"}[5m])), 0.001)
+
+  - name: nbo-slo
+    rules:
+      - alert: NBOHighErrorRate
+        expr: nbo:score_error_rate > 0.03
+        for: 5m
+        labels:
+          severity: critical
+          slo: api_error_rate
+        annotations:
+          summary: NBO /score error-rate above critical SLO
+          description: "API error-rate is above 3 percent for 5m. Threshold is [assumption] until baseline run; see docs/sli_slo.md."
+
+      - alert: NBOHighP95Latency
+        expr: nbo:score_latency_p95_seconds > 0.8
+        for: 5m
+        labels:
+          severity: critical
+          slo: api_latency_p95
+        annotations:
+          summary: NBO /score p95 latency above critical SLO
+          description: "p95 /score latency is above 800 ms for 5m. Threshold is [assumption] until baseline run; see docs/sli_slo.md."

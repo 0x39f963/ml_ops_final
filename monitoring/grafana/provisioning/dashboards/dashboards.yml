@@ -1,0 +1,14 @@
+# Generated at: 2026-06-01 13:00:25 MSK
+
+apiVersion: 1
+
+providers:
+  - name: NBO dashboards
+    orgId: 1
+    folder: NBO
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards

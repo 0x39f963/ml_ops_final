@@ -21,5 +21,6 @@ mlflow.db
 *.joblib
 
 reports/*.html
+reports/prometheus/*.prom
 screenshots/*.png
 screenshots/*.jpg

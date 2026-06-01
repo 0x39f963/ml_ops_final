@@ -45,3 +45,7 @@ crash.*.log
 # Airflow and runtime logs for future DAG work.
 airflow_home/
 logs/
+
+# Monitoring runtime outputs.
+reports/*.html
+reports/prometheus/*.prom
