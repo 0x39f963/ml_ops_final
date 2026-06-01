@@ -128,7 +128,7 @@ docker compose up -d --build nbo-api   # http://localhost:18000/health
 - dag парсится и без установленного airflow (shim), чтобы ci/тесты не тянули airflow и не запускали обучение.
 
 ```bash
-docker compose -f docker-compose.yml -f dags/airflow_compose_snippet.yml up -d airflow   # ui http://localhost:18080
+docker compose up -d airflow   # ui http://localhost:8080
 ```
 
 ### мониторинг (prometheus + grafana + evidently)
@@ -140,6 +140,16 @@ docker compose -f docker-compose.yml -f dags/airflow_compose_snippet.yml up -d a
 
 ```bash
 docker compose up -d prometheus grafana node-exporter   # grafana http://localhost:3000 (admin/admin), prometheus http://localhost:9090
+```
+
+### инфра / ci (terraform + github actions)
+
+- весь стек поднимается одной командой `docker compose up -d` (mlflow, nbo-api, airflow, prometheus, grafana, node-exporter, minio) - у сервисов healthcheck, `docker ps` -> Up (healthy).
+- terraform (local provider) держит декларативные манифесты стека: storage / mlflow / airflow / api / pipeline-contract. `terraform plan` -> 5 to add; planы сохранены в [reports/terraform_plan.txt](reports/terraform_plan.txt) + destroy-план. cloud-провайдер пока заглушка (перед защитой).
+- ci (github actions): job checks (compile + smoke-тесты на синтетике) + job terraform (fmt / validate / plan). обучение в ci не гоняется - это работа dag.
+
+```bash
+cd infra && terraform init && terraform validate && terraform plan
 ```
 
 ---
@@ -203,7 +213,6 @@ docker compose up -d mlflow   # ui http://localhost:15000
 
 ## в разработке
 
-- iac terraform + ci/cd (github actions: lint / tests / terraform plan)
 - demo ui: ввод client_id -> топ-10 предсказанных продуктов
 - манифест зрелости (level 2) + финальная сборка + скрины (docker ps healthy, /health 200)
 - деплой в облако (одна vm, перед защитой)
