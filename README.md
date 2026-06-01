@@ -117,6 +117,20 @@ fastapi-сервис поверх champion-модели (читается по m
 docker compose up -d --build nbo-api   # http://localhost:18000/health
 ```
 
+### переобучение (airflow dag)
+
+`nbo_retrain_pipeline` - континуальное переобучение с гейтом по метрике (это и есть "вывод плохой модели через переключение трафика").
+
+- цепочка: `wait_for_batch` (file/s3 sensor) -> `validate_data` -> `build_features` -> `train` -> `evaluate` -> `compare_with_champion` -> `register_model` / `skip_deploy` -> `finish`.
+- gate: `precision@10_new >= champion и >= порога` -> регистрируем + промоутим challenger в champion (alias-switch). иначе skip, champion не трогаем.
+- validate реально падает (raise) на битой схеме / null / out-of-range, не пускает обучение дальше.
+- обучение живет только в dag, не в ci.
+- dag парсится и без установленного airflow (shim), чтобы ci/тесты не тянули airflow и не запускали обучение.
+
+```bash
+docker compose -f docker-compose.yml -f dags/airflow_compose_snippet.yml up -d airflow   # ui http://localhost:18080
+```
+
 ---
 
 ## mdd / adr (latency)
@@ -178,7 +192,6 @@ docker compose up -d mlflow   # ui http://localhost:15000
 
 ## в разработке
 
-- retraining dag в airflow: sensor -> validate -> features -> train -> evaluate -> gate -> register/skip
 - мониторинг: prometheus + grafana + evidently (drift), полная таблица sli/slo на 3 уровнях
 - iac terraform + ci/cd (github actions: lint / tests / terraform plan)
 - demo ui: ввод client_id -> топ-10 предсказанных продуктов
