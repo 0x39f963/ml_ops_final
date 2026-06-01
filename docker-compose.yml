@@ -1,23 +1,25 @@
-# Generated at: 2026-05-31 23:10:05 MSK
+# Generated at: 2026-06-01 13:41:00 MSK
 
 services:
   mlflow:
     image: python:3.12-slim
-    container_name: ml005_mlflow
+    container_name: nbo_mlflow
     command: >
       /bin/sh -lc "
       pip install --no-cache-dir mlflow==2.22.5 &&
       mlflow server
-      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --backend-store-uri sqlite:////mlflow/mlruns/mlflow.db
       --serve-artifacts
       --artifacts-destination /mlflow/artifacts
-      --default-artifact-root mlflow-artifacts:/
+      --default-artifact-root /mlflow/artifacts
       --host 0.0.0.0
       --port 5000"
     ports:
-      - "${MLFLOW_PORT:-15000}:5000"
+      - "${MLFLOW_PORT:-5000}:5000"
     volumes:
       - mlflow_data:/mlflow
+      - ./mlruns:/mlflow/mlruns
+      - ./models:/mlflow/artifacts
     healthcheck:
       test:
         [
@@ -33,22 +35,24 @@ services:
 
   nbo-api:
     build: .
-    container_name: nbo-api
+    container_name: nbo_nbo-api
     command: uvicorn src.serve_api:app --host 0.0.0.0 --port 8000
     env_file:
       - path: .env
         required: false
     environment:
+      DATA_DIR: ${DATA_DIR:-/app/data}
+      EVENTS_PARQUET: ${EVENTS_PARQUET:-/app/data/sample_synth.parquet}
+      FEATURE_STORE_DIR: ${FEATURE_STORE_DIR:-/app/data/feature_store}
       MLFLOW_TRACKING_URI: http://mlflow:5000
       MLFLOW_MODEL_NAME: ${MLFLOW_MODEL_NAME:-nbo_topn}
-      FEATURE_STORE_DIR: ${FEATURE_STORE_DIR:-data/feature_store}
       MODEL_DIR: ${MODEL_DIR:-/app/models}
       TOP_N: ${TOP_N:-10}
       DATA_CUTOFF: ${DATA_CUTOFF:-}
       SCORE_DECISION_THRESHOLD: ${SCORE_DECISION_THRESHOLD:-0.5}
       MODEL_REFRESH_ON_REQUEST: ${MODEL_REFRESH_ON_REQUEST:-false}
     ports:
-      - "${API_PORT:-18000}:8000"
+      - "${NBO_API_PORT:-8000}:8000"
     depends_on:
       mlflow:
         condition: service_healthy
@@ -57,6 +61,7 @@ services:
       - ./data:/app/data:ro
       - ./models:/app/models:ro
       - ./reports:/app/reports
+      - ./src:/app/src:ro
     healthcheck:
       test:
         [
@@ -67,13 +72,77 @@ services:
         ]
       interval: 15s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 8
+      start_period: 30s
 
-  # b08 monitoring
+  airflow:
+    image: apache/airflow:2.10.5-python3.12
+    container_name: nbo_airflow
+    user: "${AIRFLOW_UID:-1000}:0"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      AIRFLOW_CONN_FS_DEFAULT: '{"conn_type":"fs","extra":{"path":"/opt/airflow"}}'
+      AIRFLOW_CONN_AWS_DEFAULT: "aws://minioadmin:minioadmin@/?endpoint_url=http%3A%2F%2Fminio%3A9000&region_name=us-east-1"
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_MODEL_NAME: ${MLFLOW_MODEL_NAME:-nbo_topn}
+      PYTHONPATH: /opt/airflow
+      EVENTS_PARQUET: ${EVENTS_PARQUET:-/opt/airflow/data/sample_synth.parquet}
+      FEATURE_STORE_DIR: ${FEATURE_STORE_DIR:-/opt/airflow/data/feature_store}
+      MODEL_DIR: ${MODEL_DIR:-/opt/airflow/models}
+      NBO_USE_S3_SENSOR: ${NBO_USE_S3_SENSOR:-0}
+      NBO_BATCH_PATH: ${NBO_BATCH_PATH:-/opt/airflow/data/sample_synth.parquet}
+      NBO_S3_BUCKET: ${NBO_S3_BUCKET:-nbo-batches}
+      NBO_S3_KEY_TEMPLATE: "incoming/{{ ds }}/scoring_batch.parquet"
+      NBO_GATE_PRECISION_AT_10_THRESHOLD: ${NBO_GATE_PRECISION_AT_10_THRESHOLD:-0.10}
+      NBO_METRIC_REPORT: ${NBO_METRIC_REPORT:-/opt/airflow/reports/metric_report.json}
+      NBO_TRAIN_REFERENCE_QUARTER: ${NBO_TRAIN_REFERENCE_QUARTER:-2021Q4}
+      NBO_FEATURE_STORE_QUARTERS: ${NBO_FEATURE_STORE_QUARTERS:-}
+      NBO_DAG_SCHEDULE: ${NBO_DAG_SCHEDULE:-@daily}
+      _PIP_ADDITIONAL_REQUIREMENTS: "pandas>=2.2 pyarrow>=15.0 numpy>=1.26 scikit-learn>=1.4 lightgbm>=4.3 fastapi>=0.110 uvicorn[standard]>=0.29 mlflow==2.22.5 prometheus-client>=0.20 httpx>=0.27 pydantic>=2.6 apache-airflow-providers-amazon"
+    depends_on:
+      mlflow:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./artifacts:/opt/airflow/artifacts:ro
+      - ./data:/opt/airflow/data
+      - ./reports:/opt/airflow/reports
+      - ./models:/opt/airflow/models
+    ports:
+      - "${AIRFLOW_PORT:-8080}:8080"
+    command:
+      - bash
+      - -lc
+      - |
+        set -e
+        airflow db migrate
+        airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true
+        airflow webserver --port 8080 --hostname 0.0.0.0 &
+        exec airflow scheduler
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://localhost:8080/health').status == 200 else 1)",
+        ]
+      interval: 20s
+      timeout: 10s
+      retries: 20
+      start_period: 180s
+
   prometheus:
     image: prom/prometheus:v2.54.1
-    container_name: ml005_prometheus
+    container_name: nbo_prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
@@ -81,18 +150,29 @@ services:
       - --web.console.templates=/usr/share/prometheus/consoles
       - --web.enable-lifecycle
     ports:
-      - "${PROM_PORT:-9090}:9090"
+      - "${PROMETHEUS_PORT:-9090}:9090"
     depends_on:
-      - nbo-api
-      - node-exporter
+      nbo-api:
+        condition: service_healthy
+      node_exporter:
+        condition: service_started
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./monitoring/alerts:/etc/prometheus/alerts:ro
       - prometheus_data:/prometheus
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   grafana:
     image: grafana/grafana:11.2.2
-    container_name: ml005_grafana
+    container_name: nbo_grafana
+    env_file:
+      - path: .env
+        required: false
     environment:
       GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
@@ -100,15 +180,22 @@ services:
     ports:
       - "${GRAFANA_PORT:-3000}:3000"
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_healthy
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:3000/api/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
 
-  node-exporter:
+  node_exporter:
     image: prom/node-exporter:v1.8.2
-    container_name: ml005_node_exporter
+    container_name: nbo_node_exporter
     command:
       - --collector.textfile.directory=/var/lib/node_exporter/textfile_collector
     ports:
@@ -116,7 +203,54 @@ services:
     volumes:
       - ./reports/prometheus:/var/lib/node_exporter/textfile_collector:ro
 
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: nbo_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    container_name: nbo_minio-init
+    profiles:
+      - s3-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      NBO_S3_BUCKET: ${NBO_S3_BUCKET:-nbo-batches}
+    volumes:
+      - ./data:/demo-data:ro
+    entrypoint:
+      - /bin/sh
+      - -lc
+      - |
+        set -e
+        for i in $(seq 1 30); do
+          mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" && mc ls local >/dev/null && break
+          sleep 2
+        done
+        mc mb --ignore-existing "local/$$NBO_S3_BUCKET"
+        mc cp /demo-data/sample_synth.parquet "local/$$NBO_S3_BUCKET/incoming/2026-06-01/scoring_batch.parquet"
+        mc ls -r "local/$$NBO_S3_BUCKET"
+
 volumes:
+  grafana_data:
+  minio_data:
   mlflow_data:
   prometheus_data:
-  grafana_data:

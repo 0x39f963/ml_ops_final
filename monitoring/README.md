@@ -4,7 +4,7 @@ Generated at: 2026-06-01 13:00:25 MSK
 
 ## Что входит
 
-- Prometheus scrape: `nbo-api:8000/metrics`, `node-exporter:9100`, self-scrape.
+- Prometheus scrape: `nbo-api:8000/metrics`, `node_exporter:9100`, self-scrape.
 - Grafana provisioning: datasource `Prometheus`, dashboard `NBO / NBO overview`.
 - Drift job: `monitoring/evidently/drift_report.py`.
 - Drift live metrics: variant A, node_exporter textfile collector.
@@ -15,12 +15,12 @@ Generated at: 2026-06-01 13:00:25 MSK
 
 ```bash
 cd ml005
-docker compose up -d nbo-api prometheus grafana node-exporter
+docker compose up -d nbo-api prometheus grafana node_exporter
 ```
 
 URLs:
 
-- Prometheus: `http://localhost:${PROM_PORT:-9090}`
+- Prometheus: `http://localhost:${PROMETHEUS_PORT:-9090}`
 - Grafana: `http://localhost:${GRAFANA_PORT:-3000}`
 - Grafana demo login: `${GF_SECURITY_ADMIN_USER:-admin}` / `${GF_SECURITY_ADMIN_PASSWORD:-admin}`
 
