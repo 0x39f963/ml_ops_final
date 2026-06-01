@@ -75,6 +75,37 @@ services:
       retries: 8
       start_period: 30s
 
+  nbo-demo:
+    build:
+      context: .
+      dockerfile: demo/Dockerfile
+    container_name: nbo-demo
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      API_BASE_URL: http://nbo-api:8000
+      DATA_CUTOFF: ${DATA_CUTOFF:-}
+      DEMO_API_TIMEOUT_SECONDS: ${DEMO_API_TIMEOUT_SECONDS:-8}
+    ports:
+      - "${DEMO_PORT:-18501}:8501"
+      - "${DEMO_HEALTH_PORT:-18502}:8502"
+    depends_on:
+      nbo-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://localhost:8502/health').status == 200 else 1)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
   airflow:
     image: apache/airflow:2.10.5-python3.12
     container_name: nbo_airflow

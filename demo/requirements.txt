@@ -1,0 +1,9 @@
+# Generated at: 2026-06-01 16:55:05 MSK
+
+altair>=5.0
+fastapi>=0.110
+pandas>=2.2
+pyarrow>=15.0
+requests>=2.31
+streamlit>=1.33
+uvicorn[standard]>=0.29
