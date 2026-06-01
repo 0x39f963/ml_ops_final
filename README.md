@@ -131,6 +131,17 @@ docker compose up -d --build nbo-api   # http://localhost:18000/health
 docker compose -f docker-compose.yml -f dags/airflow_compose_snippet.yml up -d airflow   # ui http://localhost:18080
 ```
 
+### мониторинг (prometheus + grafana + evidently)
+
+- prometheus скрейпит `nbo-api:8000/metrics` + node-exporter, держит alert-правила (p95 latency, error-rate).
+- grafana авто-провижинит дашборд `nbo_overview`: p95/p99 latency, error-rate, rps, drift share.
+- evidently/drift: считаю data drift + psi на выходах пайплайна, пишу html-отчет + `nbo_drift.prom` для node-exporter (живая drift-метрика). вызывается standalone и шагом из dag.
+- sli/slo на 3 уровнях (технический / модель-данные / бизнес) с порогами и incident-action: [docs/sli_slo.md](docs/sli_slo.md). пороги пока [assumption] до baseline.
+
+```bash
+docker compose up -d prometheus grafana node-exporter   # grafana http://localhost:3000 (admin/admin), prometheus http://localhost:9090
+```
+
 ---
 
 ## mdd / adr (latency)
@@ -192,7 +203,6 @@ docker compose up -d mlflow   # ui http://localhost:15000
 
 ## в разработке
 
-- мониторинг: prometheus + grafana + evidently (drift), полная таблица sli/slo на 3 уровнях
 - iac terraform + ci/cd (github actions: lint / tests / terraform plan)
 - demo ui: ввод client_id -> топ-10 предсказанных продуктов
 - манифест зрелости (level 2) + финальная сборка + скрины (docker ps healthy, /health 200)
