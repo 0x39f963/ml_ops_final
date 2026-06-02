@@ -2,7 +2,7 @@
 
 финальный проект по курсу "развертывание ml-моделей".
 
-за основу взял рабочую модель из проекта на работе (рекомендация продуктов клиенту по истории) и собрал вокруг нее mlops-обвязку уровня 2 по требованиям дз: данные -> фичи -> обучение -> оценка -> registry -> сервинг -> мониторинг.
+за основу взял рабочую идею из продуктовой аналитики: рекомендация продуктов клиенту по истории. вокруг нее собран mlops-контур уровня 2 по требованиям дз: данные -> фичи -> обучение -> оценка -> registry -> сервинг -> мониторинг.
 
 домен обезличенный: вендор b2b-софта (продажи / продления лицензий). задача: по клиенту (`client_id`) на дату вернуть топ-10 продуктов, которые он скорее всего купит / продлит в следующем квартале (Q+1).
 
@@ -10,12 +10,12 @@
 
 ## про данные и модель
 
-саму обученную модель и реальные данные в репозиторий положить не могу, nda. поэтому в git уходит только синтетика + код, а работу сервиса показываю на скринах с localhost.
+саму обученную модель и реальные данные в репозиторий положить нельзя. поэтому в git уходит только синтетика + код, а работу сервиса показываю на localhost-evidence.
 
 - в репо лежит маленький синтетический сэмпл [data/sample_synth.parquet](data/sample_synth.parquet), на нем все крутится локально / в ci.
 - реальные parquet / `model.pkl` / `mlruns` / `.env` держу на localhost, закрыты через [.gitignore](.gitignore).
 - обезличивание: продукты = `PROD_01..PROD_39`, сегменты = `SEG_0..SEG_6`, клиент = `client_id` (хэш, не инн).
-- свой `make leak-check` гоняю перед каждым пушем: проверяет gitignore-гейты + ищет в файлах id-подобные номера / сырые имена продуктов.
+- свой `make leak-check` гоняю перед пушем: проверяет gitignore-гейты + ищет в файлах id-подобные номера / сырые имена продуктов.
 
 ---
 
@@ -24,6 +24,7 @@
 ```text
 ml005/
 |-- README.md
+|-- manifest.md
 |-- requirements.txt
 |-- docker-compose.yml        # полный стек: mlflow / nbo-api / airflow / prometheus / grafana / node-exporter / minio
 |-- Dockerfile                # образ nbo-api
@@ -46,13 +47,14 @@ ml005/
 |-- artifacts/
 |   `-- feature_list.json     # контракт фич (порядок + hash), общий для train/serve
 |-- notebooks/
+|   |-- HW_Design.ipynb       # финальный design-notebook для сдачи
 |   `-- mdd_latency.ipynb     # mdd по latency
 |-- adr/0001-latency-mdd-decision.md
 |-- docs/sli_slo.md           # sli/slo на 3 уровнях
 |-- reports/                  # верификационные логи + метрики + terraform planы (без реальных данных)
 |-- tests/                    # pytest (features / eval / registry / api / dag / drift)
 |-- data/                     # только sample_synth.parquet (синтетика)
-`-- screenshots/              # evidence-скрины с localhost
+`-- screenshots/              # evidence-скрины / render / index
 ```
 
 ---
@@ -91,7 +93,7 @@ events -> features (pit cutoff) -> train: champion + challenger -> evaluate (hol
 
 - метрики на honest holdout (Q_t+1): precision@10 / recall@10 / map@10 / ndcg@10 / hit-rate@10 + per-product auc.
 - challenger сравниваю с champion, считаю uplift (абсолютный + относительный).
-- отчеты: [reports/metric_report.md](reports/metric_report.md) (человеку) + reports/metric_report.json (для gate).
+- отчеты: [reports/metric_report.md](reports/metric_report.md) (человеку) + [reports/metric_report.json](reports/metric_report.json) (для gate).
 - на синтетике сигнал слабый, поэтому абсолютные числа маленькие. синтетика нужна только чтобы пайплайн крутился, на реальных данных метрики другие.
 
 ### mlflow registry
@@ -161,6 +163,84 @@ cd infra && terraform init && terraform validate && terraform plan
 
 ---
 
+## эндпоинты
+
+| endpoint | зачем |
+|---|---|
+| `GET /health` | жив ли сервис + какая версия champion |
+| `POST /score` | top-10 по одному `client_id` |
+| `POST /batch-score` | top-10 по списку клиентов |
+| `GET /model-info` | версия / метрики / `feature_list_hash` |
+| `GET /metrics` | prometheus scrape |
+
+пример `/score`:
+
+```json
+{"client_id":"C0004e3cbdfb8","reference_date":"2026Q1","mode":"single"}
+```
+
+ответ содержит:
+
+```text
+client_id / model_version / segment_id / status / score / recommended_action / caveats
+```
+
+если клиент `not_scorable`, то `score=null`. фейковый top-10 не рисую.
+
+---
+
+## порты
+
+дефолты из [.env.example](.env.example):
+
+| сервис | порт |
+|---|---:|
+| nbo-api | `8000` |
+| mlflow | `5000` |
+| airflow | `8080` |
+| prometheus | `9090` |
+| grafana | `3000` |
+| demo ui | `18501` |
+| demo health | `18502` |
+
+---
+
+## evidence для сдачи
+
+главные файлы:
+
+- финальный manifest: [manifest.md](manifest.md)
+- design-notebook: [notebooks/HW_Design.ipynb](notebooks/HW_Design.ipynb)
+- rubric mapping: [reports/rubric_mapping.md](reports/rubric_mapping.md)
+- sanitize report: [reports/sanitize_report.md](reports/sanitize_report.md)
+- evidence index: [screenshots/INDEX.md](screenshots/INDEX.md)
+- sli/slo: [docs/sli_slo.md](docs/sli_slo.md)
+- mdd/adr: [adr/0001-latency-mdd-decision.md](adr/0001-latency-mdd-decision.md)
+
+что уже есть:
+
+- docker ps healthy: [screenshots/docker_ps_healthy.png](screenshots/docker_ps_healthy.png)
+- `/health` 200 текстом: [reports/api_smoke.md](reports/api_smoke.md)
+- `/health` render (не терминальный скрин): [screenshots/health_200_render.png](screenshots/health_200_render.png)
+- demo render из live `/score` (не браузерный скрин streamlit): [screenshots/demo_score_render.png](screenshots/demo_score_render.png)
+- mlflow aliases / promote / rollback: [reports/registry_demo.md](reports/registry_demo.md)
+- airflow gate evidence: [reports/b07_dag_verification_log.md](reports/b07_dag_verification_log.md)
+- terraform plan: [reports/terraform_plan.txt](reports/terraform_plan.txt)
+
+что еще надо снять руками перед защитой:
+
+- real `/health` screenshot: `screenshots/api_health.png`
+- mlflow registry aliases: `screenshots/mlflow_registry_aliases.png`
+- airflow graph / run / skip gate: `screenshots/b07_*.png`
+- grafana overview: `screenshots/b08_grafana_overview.png`
+- prometheus targets: `screenshots/b08_prometheus_targets.png`
+- evidently report: `screenshots/b08_evidently_report.png`
+- streamlit demo UI: `screenshots/demo_top10.png`
+
+runbook для ручного съема лежит вне публичного `ml005/` и используется владельцем перед защитой.
+
+---
+
 ## mdd / adr (latency)
 
 проверяю гипотезу про скорость ответа сервиса на двух распределениях latency (старая схема vs улучшенная с кэшом).
@@ -203,7 +283,7 @@ make data
 # тесты
 .venv/bin/python -m pytest -q
 
-# проверка на утечку (должно быть зелено)
+# проверка на утечку
 make leak-check
 
 # обучить (на синтетике)
@@ -212,14 +292,13 @@ make leak-check
 # офлайн-оценка
 .venv/bin/python -m src.evaluate
 
-# mlflow registry
-docker compose up -d mlflow   # ui http://localhost:5000
+# полный стек
+make up
 ```
 
 ---
 
 ## в разработке
 
-- demo ui: ввод client_id -> топ-10 предсказанных продуктов
-- манифест зрелости (level 2) + финальная сборка + скрины (docker ps healthy, /health 200)
+- live browser screenshots по runbook перед устной защитой
 - деплой в облако (одна vm, перед защитой)
