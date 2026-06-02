@@ -145,7 +145,7 @@ docker compose up -d airflow   # ui http://localhost:8080
 - prometheus скрейпит `nbo-api:8000/metrics` + node-exporter, держит alert-правила (p95 latency, error-rate).
 - grafana авто-провижинит дашборд `nbo_overview`: p95/p99 latency, error-rate, rps, drift share.
 - evidently/drift: считаю data drift + psi на выходах пайплайна, пишу html-отчет + `nbo_drift.prom` для node-exporter (живая drift-метрика). вызывается standalone и шагом из dag.
-- sli/slo на 3 уровнях (технический / модель-данные / бизнес) с порогами и incident-action: [docs/sli_slo.md](docs/sli_slo.md). пороги пока [assumption] до baseline.
+- sli/slo на 3 уровнях (технический / модель-данные / бизнес) с порогами и incident-action: [docs/sli_slo.md](docs/sli_slo.md). числовые пороги помечены [assumption] до калибровки на baseline.
 
 ```bash
 docker compose up -d prometheus grafana node-exporter   # grafana http://localhost:3000 (admin/admin), prometheus http://localhost:9090
@@ -154,7 +154,7 @@ docker compose up -d prometheus grafana node-exporter   # grafana http://localho
 ### инфра / ci (terraform + github actions)
 
 - весь стек поднимается одной командой `docker compose up -d` (mlflow, nbo-api, airflow, prometheus, grafana, node-exporter, minio) - у сервисов healthcheck, `docker ps` -> Up (healthy).
-- terraform (local provider) держит декларативные манифесты стека: storage / mlflow / airflow / api / pipeline-contract. `terraform plan` -> 5 to add; planы сохранены в [reports/terraform_plan.txt](reports/terraform_plan.txt) + destroy-план. cloud-провайдер пока заглушка (перед защитой).
+- terraform (local provider) держит декларативные манифесты стека: storage / mlflow / airflow / api / pipeline-contract. `terraform plan` -> 5 to add; planы сохранены в [reports/terraform_plan.txt](reports/terraform_plan.txt) + destroy-план.
 - ci (github actions): job checks (compile + smoke-тесты на синтетике) + job terraform (fmt / validate / plan). обучение в ci не гоняется - это работа dag.
 
 ```bash
@@ -217,27 +217,14 @@ client_id / model_version / segment_id / status / score / recommended_action / c
 - sli/slo: [docs/sli_slo.md](docs/sli_slo.md)
 - mdd/adr: [adr/0001-latency-mdd-decision.md](adr/0001-latency-mdd-decision.md)
 
-что уже есть:
+операционные доказательства (localhost):
 
 - docker ps healthy: [screenshots/docker_ps_healthy.png](screenshots/docker_ps_healthy.png)
-- `/health` 200 текстом: [reports/api_smoke.md](reports/api_smoke.md)
-- `/health` render (не терминальный скрин): [screenshots/health_200_render.png](screenshots/health_200_render.png)
-- demo render из live `/score` (не браузерный скрин streamlit): [screenshots/demo_score_render.png](screenshots/demo_score_render.png)
+- `/health` 200: [reports/api_smoke.md](reports/api_smoke.md)
 - mlflow aliases / promote / rollback: [reports/registry_demo.md](reports/registry_demo.md)
-- airflow gate evidence: [reports/b07_dag_verification_log.md](reports/b07_dag_verification_log.md)
+- airflow gate: [reports/b07_dag_verification_log.md](reports/b07_dag_verification_log.md)
 - terraform plan: [reports/terraform_plan.txt](reports/terraform_plan.txt)
-
-что еще надо снять руками перед защитой:
-
-- real `/health` screenshot: `screenshots/api_health.png`
-- mlflow registry aliases: `screenshots/mlflow_registry_aliases.png`
-- airflow graph / run / skip gate: `screenshots/b07_*.png`
-- grafana overview: `screenshots/b08_grafana_overview.png`
-- prometheus targets: `screenshots/b08_prometheus_targets.png`
-- evidently report: `screenshots/b08_evidently_report.png`
-- streamlit demo UI: `screenshots/demo_top10.png`
-
-runbook для ручного съема лежит вне публичного `ml005/` и используется владельцем перед защитой.
+- скрины ui (mlflow / airflow / grafana / prometheus / demo): [screenshots/](screenshots/)
 
 ---
 
@@ -295,10 +282,3 @@ make leak-check
 # полный стек
 make up
 ```
-
----
-
-## в разработке
-
-- live browser screenshots по runbook перед устной защитой
-- деплой в облако (одна vm, перед защитой)
