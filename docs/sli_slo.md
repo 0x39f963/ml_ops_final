@@ -1,36 +1,72 @@
 Generated at: 2026-06-01 13:00:25 MSK
 
-# NBO SLI/SLO
+# SLI / SLO сервиса рекомендаций (NBO)
 
-Числовые пороги - [assumption] до baseline-прогона (master TZ section 6 + b04/b12). После baseline обновить пороги, но не удалять timestamp-header.
+Этот документ описывает, по каким показателям мы понимаем, что система здорова, и какие границы для них считаем нормой, тревогой и аварией.
 
-## Technical
+Коротко о терминах простыми словами:
+- **SLI (показатель уровня сервиса)** - это измеримая величина, по которой видно, в порядке ли система. Например, как быстро она отвечает или сколько запросов падает с ошибкой.
+- **SLO (цель уровня сервиса)** - это границы для показателя: что считаем нормой, что поводом насторожиться, а что аварией, на которую надо реагировать.
+- **incident-action (действие при срабатывании)** - что конкретно делаем, если показатель ушел в тревогу или аварию.
 
-| SLI | source | normal | warning | critical | incident-action |
+Следим за здоровьем на трех уровнях:
+1. **технический** - быстро ли и без ошибок отвечает сам сервис;
+2. **модель и данные** - не деградирует ли качество модели и не испортились ли входные данные;
+3. **бизнес** - приносит ли система реальную пользу продажам.
+
+Важно: конкретные числовые пороги ниже - предварительные. Их финально откалибруют после первого боевого прогона и после того, как накопится факт следующего квартала. Точные формулы для Prometheus вынесены в приложение в конце, чтобы таблицы читались легко.
+
+---
+
+## 1. Технический уровень (здоровье сервиса)
+
+| показатель | что значит | норма | тревога | авария | что делаем при срабатывании |
 |---|---|---|---|---|---|
-| `/health` availability | Prometheus blackbox or curl smoke [assumption], current API endpoint `GET /health` | >= 99% demo window [assumption] | 97-99% [assumption] | < 97% [assumption] | restart API / inspect MLflow alias / rollback container |
-| p95 `/score` latency | Prometheus: `histogram_quantile(0.95, sum(rate(nbo_request_latency_seconds_bucket{job="nbo-api",endpoint="/score"}[5m])) by (le))` | < 500 ms cached [assumption] | 500-800 ms [assumption] | > 800 ms [assumption] | check cache/model load / scale API / reduce request path IO |
-| API error-rate | Prometheus: `sum(rate(nbo_errors_total{job="nbo-api",endpoint="/score"}[5m])) / clamp_min(sum(rate(nbo_requests_total{job="nbo-api",endpoint="/score"}[5m])), 0.001)` | < 1% [assumption] | 1-3% [assumption] | > 3% [assumption] | rollback champion / inspect feature parity / stop bad deploy |
-| DAG success-rate | Airflow DAG state now; Prometheus exporter [unknown] | >= 95% [assumption] | 90-95% [assumption] | < 90% [assumption] | inspect failed task / rerun after data fix / block promote |
-| containers | `docker compose ps`, future Prometheus `up` | Up or healthy [assumption] | restart > 1 [assumption] | down [assumption] | redeploy service / inspect logs / restore volume |
+| доступность `/health` | сервис вообще отвечает и готов работать | >= 99% времени | 97-99% | < 97% | перезапустить api, проверить что модель привязана (alias champion), откатить контейнер |
+| время ответа `/score` (по 95% запросов) | как быстро отвечает сервис большинству запросов | < 500 мс | 500-800 мс | > 800 мс | проверить кэш и загрузку модели, добавить ресурсов, убрать тяжелые операции из пути запроса |
+| доля ошибок api | сколько запросов падает с ошибкой | < 1% | 1-3% | > 3% | откатить модель, проверить совпадение признаков обучения и сервинга, остановить плохой выпуск |
+| успешность переобучений | какая доля прогонов авто-переобучения завершилась нормально | >= 95% | 90-95% | < 90% | разобрать упавшую задачу, перезапустить после починки данных, заблокировать выпуск модели |
+| состояние контейнеров | подняты ли все сервисы | Up / healthy | частые рестарты | сервис лежит | передеплой, посмотреть логи, восстановить хранилище |
 
-## Model-Data
+## 2. Уровень модели и данных (качество)
 
-| SLI | source | normal | warning | critical | incident-action |
+| показатель | что значит | норма | тревога | авария | что делаем при срабатывании |
 |---|---|---|---|---|---|
-| validation critical checks | DAG `validate_data` result / report JSON | 100% pass [assumption] | not_applicable | any fail [assumption] | block train / fix batch / rerun validation |
-| feature missingness for scorable clients | feature QA report or DAG validation summary [assumption] | < 2% [assumption] | 2-5% [assumption] | > 5% [assumption] | block or flag scoring / inspect source data |
-| precision@10 vs champion | `reports/metric_report.json`, MLflow run metrics | >= champion + threshold [assumption] | equal to champion [assumption] | < champion [assumption] | skip deploy / keep champion alias |
-| drift share | Evidently summary + Prometheus `nbo_drift_share` textfile metric | < 0.20 [assumption] | 0.20-0.40 [assumption] | > 0.40 [assumption] | rerun validation / inspect feature drift / retrain if stable |
-| training-serving parity | API load checks + feature_list hash | pass [assumption] | not_applicable | fail [assumption] | block promote / rebuild feature_list / rollback alias |
+| проверки данных перед обучением | прошли ли входные данные критичные проверки качества | 100% проверок пройдено | - | хоть одна не пройдена | не пускать обучение, починить батч, перезапустить проверку |
+| полнота признаков у скорабельных клиентов | насколько заполнены признаки (мало ли пропусков) | пропусков < 2% | 2-5% | > 5% | пометить или заблокировать скоринг, разобраться с источником данных |
+| точность топ-10 у новой модели vs текущая | не стала ли новая версия хуже рабочей | >= текущей + запас | вровень с текущей | хуже текущей | не выпускать новую версию, оставить текущую (champion) |
+| дрейф данных | сильно ли изменились данные относительно тех, на которых училась модель | ниже порога (< 0.20) | 0.20-0.40 | выше 0.40 | перепроверить, разобрать причину дрейфа, переобучить если изменение устойчивое |
+| согласованность обучения и сервинга | одинаково ли считаются признаки при обучении и в работе | совпадает | - | расходится | заблокировать выпуск, пересобрать список признаков, откатить версию |
 
-## Business
+## 3. Бизнес-уровень (польза для продаж)
 
-| SLI | source | normal | warning | critical | incident-action |
+| показатель | что значит | норма | тревога | авария | что делаем при срабатывании |
 |---|---|---|---|---|---|
-| hit-rate@10 | delayed Q+1 campaign outcomes / manual baseline [assumption] | >= baseline campaign [assumption] | -10% vs baseline [assumption] | -25% vs baseline [assumption] | review model / review offer policy / rollback recommendation set |
-| scorable coverage | scoring registry status counts / API not_scorable rate | >= baseline [assumption] | -5% vs baseline [assumption] | -15% vs baseline [assumption] | investigate data ingestion / entity mapping / low-evidence rule |
-| low-confidence offer share | score output distribution / `nbo_score_distribution_bucket` [assumption] | <= threshold [assumption] | threshold..1.5x [assumption] | > 1.5x [assumption] | tighten gate / cap offers / review feature drift |
-| sales workload rec/day | campaign planner or manual baseline [assumption] | <= team capacity [assumption] | near capacity [assumption] | > capacity [assumption] | cap top-N / throttle batch / prioritize high-confidence clients |
+| hit-rate@10 | доля клиентов, у которых хотя бы одна из 10 рекомендаций реально сбылась | >= базового уровня | -10% к базовому | -25% к базовому | пересмотреть модель, пересмотреть политику предложений, откатить набор рекомендаций |
+| покрытие скорабельных клиентов | по какой доле базы вообще можем дать рекомендации | >= базового | -5% | -15% | разобраться с загрузкой данных, маппингом клиентов и правилом отсечения слабых данных |
+| доля низкоуверенных предложений | сколько в выдаче рекомендаций с низкой уверенностью | <= порога | порог..1.5x | > 1.5x | ужесточить порог выпуска, ограничить выдачу, проверить дрейф |
+| нагрузка на продажи (рекомендаций в день) | не больше ли рекомендаций, чем команда может обработать | <= емкости команды | около емкости | выше емкости | ограничить размер топ-N, притормозить пакетный расчет, отдавать в первую очередь уверенные рекомендации |
 
-**Вывод:** b08 gives live technical + drift observability now. Business SLI needs delayed feedback after Q+1, so values stay [assumption] until baseline evidence exists.
+---
+
+## Почему пороги пока предварительные
+
+- технические и модельные показатели уже измеряются вживую (Prometheus + Evidently), но "нормальные" значения для нашей нагрузки честно установятся только после первого боевого прогона;
+- бизнес-показатели (в первую очередь hit-rate@10) можно измерить только постфактум - по итогам следующего квартала, когда станет известно, какие рекомендации сбылись;
+- поэтому числа выше - это рабочая отправная точка, а не финальные SLA. После накопления факта пороги уточним, не меняя структуру документа.
+
+**Вывод:** уже сейчас система наблюдаема на техническом и модельном уровнях (видно скорость, ошибки, дрейф). Бизнес-уровень требует обратной связи по факту следующего квартала, поэтому его пороги остаются предварительными до накопления реальных данных.
+
+---
+
+## Приложение: точные формулы для Prometheus
+
+Для тех показателей, что считаются в Prometheus напрямую (остальные берутся из Evidently, отчетов оценки или состояния DAG):
+
+- время ответа `/score` (p95):
+  `histogram_quantile(0.95, sum(rate(nbo_request_latency_seconds_bucket{job="nbo-api",endpoint="/score"}[5m])) by (le))`
+- доля ошибок `/score`:
+  `sum(rate(nbo_errors_total{job="nbo-api",endpoint="/score"}[5m])) / clamp_min(sum(rate(nbo_requests_total{job="nbo-api",endpoint="/score"}[5m])), 0.001)`
+- дрейф данных: метрика `nbo_drift_share` (пишется задачей Evidently в node_exporter textfile).
+- успешность переобучений: из состояния задач Airflow DAG `nbo_retrain_pipeline`.
+- точность топ-10: из отчета оценки `reports/metric_report.json` и метрик прогона в MLflow.
