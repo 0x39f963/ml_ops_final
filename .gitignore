@@ -6,6 +6,8 @@
 data/*.parquet
 data/**/*.parquet
 data/feature_store/
+data/feature_store_real/
+data/feature_store_real
 !data/sample_synth.parquet
 
 # MDD latency datasets are synthetic but large; notebooks regenerate them locally.
@@ -13,10 +15,14 @@ data/*latency*.csv
 
 # Local model artifacts are not committed.
 models/*
+models_real/
+models_real
 !models/.gitkeep
 *.pkl
 *.joblib
 mlruns/
+mlruns_real/
+mlruns_real
 mlflow/
 mlflow.db
 *.db-journal
@@ -50,4 +56,8 @@ logs/
 
 # Monitoring runtime outputs.
 reports/*.html
+reports/*_real.*
 reports/prometheus/*.prom
+
+# Local-only helper scripts and scratch files.
+.local/
