@@ -6,6 +6,8 @@
 
 домен обезличенный: вендор b2b-софта (продажи / продления лицензий). задача: по клиенту (`client_id`) на дату вернуть топ-10 продуктов, которые он скорее всего купит / продлит в следующем квартале (Q+1).
 
+полное описание бизнес-языком - зачем система, какую боль закрывает, что делает, как устроена и какой уровень зрелости заявлен - в манифесте: **[manifest.md](manifest.md)**. ниже - техническая часть.
+
 ---
 
 ## про данные и модель
@@ -205,26 +207,63 @@ client_id / model_version / segment_id / status / score / recommended_action / c
 
 ---
 
-## evidence для сдачи
+## сверка по критериям оценки
 
-главные файлы:
+главные документы: [manifest.md](manifest.md) (бизнес-описание), [reports/rubric_mapping.md](reports/rubric_mapping.md), [docs/sli_slo.md](docs/sli_slo.md), [adr/0001-latency-mdd-decision.md](adr/0001-latency-mdd-decision.md), [notebooks/HW_Design.ipynb](notebooks/HW_Design.ipynb).
 
-- финальный manifest: [manifest.md](manifest.md)
-- design-notebook: [notebooks/HW_Design.ipynb](notebooks/HW_Design.ipynb)
-- rubric mapping: [reports/rubric_mapping.md](reports/rubric_mapping.md)
-- sanitize report: [reports/sanitize_report.md](reports/sanitize_report.md)
-- evidence index: [screenshots/INDEX.md](screenshots/INDEX.md)
-- sli/slo: [docs/sli_slo.md](docs/sli_slo.md)
-- mdd/adr: [adr/0001-latency-mdd-decision.md](adr/0001-latency-mdd-decision.md)
+ниже по каждому критерию рубрики: что требуется, что сделано, и доказательство.
 
-операционные доказательства (localhost):
+### C1 - постановка цели (бизнес-метрика + метрики ML)
 
-- docker ps healthy: [screenshots/docker_ps_healthy.png](screenshots/docker_ps_healthy.png)
-- `/health` 200: [reports/api_smoke.md](reports/api_smoke.md)
-- mlflow aliases / promote / rollback: [reports/registry_demo.md](reports/registry_demo.md)
-- airflow gate: [reports/b07_dag_verification_log.md](reports/b07_dag_verification_log.md)
-- terraform plan: [reports/terraform_plan.txt](reports/terraform_plan.txt)
-- скрины ui (mlflow / airflow / grafana / prometheus / demo): [screenshots/](screenshots/)
+- **требование:** верная бизнес-метрика и верные метрики ML-проектирования.
+- **сделано:** бизнес-метрика - **hit-rate@10** (доля клиентов, у кого хотя бы 1 из топ-10 предложений реально сбылся в Q+1). ML-прокси - precision@10 / recall@10 / map@10 / ndcg@10 + per-product auc; есть метрик-дерево. подробно в [manifest.md](manifest.md) (разделы 7-8), числа - в [reports/metric_report.md](reports/metric_report.md).
+- **доказательство:** сервис по клиенту реально отдает топ-10 продуктов с вероятностью.
+
+контракт scoring-API (`/score`, `/health`, `/model-info`, `/metrics`):
+
+![scoring api](screenshots/api_swagger.png)
+
+demo по клиенту -> топ-10 (режим `inn`: реальный инн хэшируется в браузере, в api уходит только `client_id`-хэш):
+
+![demo top-10](screenshots/demo_top10.png)
+
+### C2 - уровень зрелости Level 2
+
+- **требование:** задокументирован и работает полный жизненный цикл; вывод плохой модели из эксплуатации через переключение трафика; заявлен и соответствует уровню 2.
+- **сделано:** champion/challenger через mlflow alias; gate в airflow dag решает register или skip; полный цикл данные -> обучение -> оценка -> registry -> сервинг -> мониторинг. описание - в [manifest.md](manifest.md) (раздел 4), alias / promote / rollback - в [reports/registry_demo.md](reports/registry_demo.md).
+- **доказательство:** airflow dag `nbo_retrain_pipeline` - конвейер переобучения:
+
+![airflow dag](screenshots/airflow_dags.png)
+
+прогон dag со всеми задачами, включая ветку `compare_with_champion -> register_model / skip_deploy` (это и есть автоматический вывод плохой модели через переключение трафика):
+
+![airflow run](screenshots/airflow_dag_run.png)
+
+### C3 - создание ML-системы (IaC + работающие компоненты)
+
+- **требование:** код + грамотный IaC + все компоненты работают; backend - `docker ps` показывает Up(healthy); frontend - `/health` отвечает 200.
+- **сделано:** terraform (local provider) + ci/cd (github actions); весь стек поднимается одной командой `docker compose up -d`, у сервисов healthcheck; terraform-план - в [reports/terraform_plan.txt](reports/terraform_plan.txt).
+- **доказательство:** `docker ps` - сервисы в состоянии Up(healthy):
+
+![docker ps healthy](screenshots/docker_ps_healthy.png)
+
+`/health` отвечает 200, модель загружена по alias champion:
+
+![health 200](screenshots/api_health.png)
+
+### C4 - управление рисками (SLI/SLO на 3 уровнях)
+
+- **требование:** SLI на 3 уровнях (технический / модельный / бизнес) с критическими порогами SLO.
+- **сделано:** все три уровня с normal / warning / critical и incident-action, с указанием источника каждой метрики (promql / evidently / dag-state): [docs/sli_slo.md](docs/sli_slo.md). сбор метрик - prometheus + grafana + evidently (дрейф данных), конфиги в [monitoring/](monitoring/).
+- **доказательство:** полная таблица SLI/SLO - в [docs/sli_slo.md](docs/sli_slo.md); живой дашборд grafana - в evidence-паке.
+
+### C5 - принятие решений по MDD (ADR)
+
+- **требование:** ADR с гипотезами H0/H1, статистическим тестом, p-value, уровнем значимости и архитектурным решением.
+- **сделано:** сравнение двух распределений latency, H0/H1, welch t-test + mann-whitney u, alpha 0.05, p ~ 0 -> H0 отклонена, решение (вынести расчет фич в batch + кэш) зафиксировано в [adr/0001-latency-mdd-decision.md](adr/0001-latency-mdd-decision.md); расчет - в [reports/mdd_test_result.md](reports/mdd_test_result.md) и [notebooks/mdd_latency.ipynb](notebooks/mdd_latency.ipynb).
+- **доказательство:** распределения latency (текущая схема vs улучшенная с кэшом):
+
+![mdd latency](reports/mdd_latency_distribution.png)
 
 ---
 
