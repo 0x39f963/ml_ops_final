@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 from pathlib import Path
+import re
 from typing import Any
 
 import altair as alt
@@ -23,6 +25,7 @@ PRODUCT_FAMILIES = [
     "addon",
 ]
 REQUEST_TIMEOUT_SECONDS = float(os.environ.get("DEMO_API_TIMEOUT_SECONDS", "8"))
+INN_RE = re.compile(r"^\d{10,12}$")
 
 
 def api_base_url() -> str:
@@ -35,9 +38,12 @@ def api_base_url() -> str:
 
 def sample_path() -> Path | None:
     env_path = os.environ.get("SAMPLE_SYNTH_PATH")
+    events_path = os.environ.get("EVENTS_PARQUET")
     candidates = []
     if env_path:
         candidates.append(Path(env_path).expanduser())
+    if events_path:
+        candidates.append(Path(events_path).expanduser())
     root = Path(__file__).resolve().parents[1]
     candidates.extend(
         [
@@ -132,6 +138,18 @@ def score_client(
         return response.json()
     except ValueError:
         return {"_error": "serving API returned non-JSON response"}
+
+
+def normalize_inn(value: str) -> str:
+    """Return digits-only INN string used for the local public projection."""
+    return "".join(ch for ch in str(value or "").strip() if ch.isdigit())
+
+
+def client_id_from_inn(value: str) -> str:
+    inn = normalize_inn(value)
+    if not INN_RE.fullmatch(inn):
+        raise ValueError("INN must contain 10 to 12 digits.")
+    return "C" + hashlib.sha1(inn.encode("utf-8")).hexdigest()[:12]
 
 
 def default_reference_date(health: dict[str, Any]) -> str:
@@ -244,13 +262,28 @@ def main() -> None:
     default_client = ids["scorable"][0] if ids["scorable"] else ""
     default_ref = default_reference_date(health)
 
-    with st.form("score-form"):
-        left, mid, right = st.columns([2, 1, 1])
-        client_id = left.text_input("client_id", value=default_client, placeholder="C0004e3cbdfb8")
-        reference_date = mid.text_input("reference_date", value=default_ref)
-        mode = right.selectbox("mode", ["single", "explain"], index=0)
-        product_family = st.selectbox("product_family", PRODUCT_FAMILIES, index=0)
-        submitted = st.form_submit_button("Score")
+    left, mid, right = st.columns([2, 1, 1])
+    lookup_mode = left.radio(
+        "lookup",
+        ["client_id", "inn"],
+        horizontal=True,
+        help="INN is hashed locally to the public client_id before the API request.",
+    )
+    if lookup_mode == "inn":
+        raw_input = left.text_input("inn", value="", placeholder="10 or 12 digits")
+        inn_digits = normalize_inn(raw_input)
+        if raw_input:
+            if INN_RE.fullmatch(inn_digits):
+                left.caption(f"hashed client_id: `{client_id_from_inn(inn_digits)}`")
+            else:
+                left.caption(f"digits detected: {len(inn_digits)} / expected 10 or 12")
+        left.caption("Raw INN is not sent to the API. The demo sends only the hashed client_id.")
+    else:
+        raw_input = left.text_input("client_id", value=default_client, placeholder="C0004e3cbdfb8")
+    reference_date = mid.text_input("reference_date", value=default_ref)
+    mode = right.selectbox("mode", ["single", "explain"], index=0)
+    product_family = st.selectbox("product_family", PRODUCT_FAMILIES, index=0)
+    submitted = st.button("Score")
 
     examples = []
     if ids["scorable"]:
@@ -261,14 +294,26 @@ def main() -> None:
         st.caption(" | ".join(examples))
 
     if submitted:
-        st.session_state["last_response"] = score_client(
-            client_id=client_id,
-            reference_date=reference_date,
-            mode=mode,
-            product_family=product_family or None,
-        )
+        try:
+            client_id = client_id_from_inn(raw_input) if lookup_mode == "inn" else raw_input
+        except ValueError as exc:
+            st.session_state["last_response"] = {"_error": str(exc)}
+        else:
+            st.session_state["last_response"] = score_client(
+                client_id=client_id,
+                reference_date=reference_date,
+                mode=mode,
+                product_family=product_family or None,
+            )
 
     response = st.session_state.get("last_response")
+    if (
+        lookup_mode == "inn"
+        and response
+        and response.get("_error") == "INN must contain 10 to 12 digits."
+        and INN_RE.fullmatch(normalize_inn(raw_input))
+    ):
+        response = None
     if response:
         show_score(response)
         with st.expander("raw response"):
