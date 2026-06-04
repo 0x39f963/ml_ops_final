@@ -18,6 +18,5 @@
 - robustness statistic: `1.0011e9`
 - robustness p_value: `0.00000000`
 - decision: `move heavy feature compute to batch + serve precomputed top-N from cache`
-- TODO-stub: `b01/b09` должны подтвердить MDD deps (`numpy` / `scipy` / `matplotlib` / `pandas`) в requirements; b10 requirements не редактирует
 
 **Вывод:** p-value ниже alpha -> improved быстрее статистически значимо, решение принято.

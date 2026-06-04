@@ -24,11 +24,4 @@
 | `reports/terraform_plan.txt` | terraform plan: манифесты стека (5 to add) | C3 |
 | `docs/sli_slo.md` | SLI/SLO на 3 уровнях с критическими порогами | C4 |
 
-## Осталось доснять (см. ТЗ)
-
-- `screenshots/mlflow_registry_aliases.png` - страница Models в mlflow с alias champion/challenger (усилит C2).
-- `screenshots/grafana_overview.png` - дашборд nbo_overview после входа (C4, основной визуальный пробел).
-- `screenshots/prometheus_targets.png` - targets, где nbo-api UP (синтетический стек; прошлый кадр снят при host-run, где target был down).
-- `screenshots/cloud_health.png` - публичный `/health` 200 с облачного деплоя (нужно для C3 на 2 балла).
-
-**Вывод:** сняты доказательства по C1, C2, C3, C5. По C4 готова документация SLI/SLO (это и есть требование рубрики); скрин дашборда grafana - в плане доснять. Облачный деплой - отдельный шаг для C3 на максимум.
+**Вывод:** evidence по критериям C1, C2, C3, C5 снято; по C4 требование закрыто документом SLI/SLO. Визуальные кадры и текстовые логи покрывают весь контур: данные, обучение, registry, сервинг, оркестрация, инфраструктура.

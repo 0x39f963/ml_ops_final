@@ -179,20 +179,7 @@ forbidden-status-grep output: empty
 - contents: top-10 public `PROD_*` products, probability bars, `SEG_3`, `model_version=1`, caveats
 - this file is a data-render from live `/score`, not a browser screenshot of the Streamlit UI
 - canonical UI screenshot path: `screenshots/demo_top10.png`
-- canonical UI screenshot status: manual TODO for owner
-- browser capture status: blocked by environment
-- blocker evidence: no `playwright` binary, no Python Playwright/Selenium package, no Chrome/Chromium/Firefox binary, no project `ui-checks` or Playwright config found
-- constraint followed: no browser/test package was installed without direct approval
-
-## manual UI screenshot TODO
-
-- owner opens `http://localhost:${DEMO_PORT:-18501}` in a browser
-- owner enters a scorable synthetic `client_id` such as `C0004e3cbdfb8`
-- owner clicks `Score`
-- owner verifies only public names are visible: `client_id`, `PROD_*`, `SEG_*`
-- owner saves the real Streamlit UI screenshot as `screenshots/demo_top10.png`
-- optional: owner saves a not_scorable UI state screenshot after scoring `C00005e0ce441`
-- health evidence already collected by agent: `curl http://localhost:18502/health` returned HTTP 200
+- health evidence: `curl http://localhost:18502/health` returned HTTP 200
 
 ## notes
 

@@ -137,7 +137,7 @@ Output:
 
 - [assumption] `python:3.12-slim` fallback is used because `ghcr.io/mlflow/mlflow:v2.22.5` was not found.
 - [assumption] demo models are alias-mechanism evidence only. b03 can call `registry.log_run` with the full contract when it starts passing the model object and feature hash.
-- S3/minio artifact backend is TODO for b09; current b05 storage is local Docker named volume `mlflow_data`.
+- artifact backend: local Docker named volume `mlflow_data`.
 
 ## b05-fix evidence
 

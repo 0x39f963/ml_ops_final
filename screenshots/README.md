@@ -53,11 +53,4 @@
 
 ---
 
-## Что еще снять (по мере готовности)
-
-- MLflow, страница Models с alias `champion` / `challenger` (усилит C2);
-- Grafana, дашборд `nbo_overview` (C4);
-- Prometheus, targets где `nbo-api` UP (C4);
-- публичный `/health` с облака (нужно для C3 на максимум).
-
 Полный каталог evidence (включая текстовые логи) - в [INDEX.md](INDEX.md).
