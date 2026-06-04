@@ -77,4 +77,30 @@ GitHub Actions: job checks (компиляция + смоук-тесты) и job
 
 ---
 
+## Дрифт данных (C4)
+
+Проверка дрифта на обезличенных реальных данных: опорный период 2024 год, текущий - 2025. Простой разбор - в отчете [reports/drift_monitoring.md](../reports/drift_monitoring.md).
+
+### Дашборд Grafana с дрифтом (C4)
+`Drift share` 30% (желтый), `Max PSI` 27.6 (красный) рядом с latency и нагрузкой.
+
+![grafana drift](grafana_drift.png)
+
+### Evidently: сводка по столбцам (C4)
+Из 9 столбцов сдвинулись 4 (`year`, `client_id`, `lifecycle_role`, `product`). Видно, какие распределения изменились между 2024 и 2025.
+
+![evidently summary](evidently_drift_summary.png)
+
+### Evidently: проектная сводка для мониторинга (C4)
+Обертка ML-005 по 10 публичным столбцам: `drift_share=0.3`, `dataset_drift=1`, `psi_max=27.6`. Эти числа уходят в Prometheus.
+
+![evidently project summary](evidently_drift_project_summary.png)
+
+### Prometheus: drift-метрики (C4)
+`nbo_drift_share=0.3`, `nbo_dataset_drift=1`, `nbo_psi_max=27.63`, `node_textfile_scrape_error=0`.
+
+![prometheus drift](prometheus_drift.png)
+
+---
+
 Полный каталог evidence (включая текстовые логи) - в [INDEX.md](INDEX.md).

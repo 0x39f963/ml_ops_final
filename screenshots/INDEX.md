@@ -15,6 +15,10 @@
 | `screenshots/mlflow_experiments.png` | mlflow: эксперимент nbo_topn, прогоны обучения, зарегистрированная модель v1 | C2 |
 | `screenshots/ci_green.png` | github actions зеленый: checks (compile + smoke) + terraform (fmt/validate/plan) | C3 |
 | `screenshots/prometheus_targets.png` | prometheus targets все UP: nbo-api, node_exporter, prometheus | C4 |
+| `screenshots/grafana_drift.png` | grafana дрифт: drift share 30%, max psi 27.6 (2024 vs 2025) | C4 |
+| `screenshots/evidently_drift_summary.png` | evidently: 4 из 9 столбцов сдвинулись между 2024 и 2025 | C4 |
+| `screenshots/evidently_drift_project_summary.png` | проектная сводка дрифта: drift_share 0.3, psi_max 27.63 | C4 |
+| `screenshots/prometheus_drift.png` | drift-метрики в prometheus: nbo_drift_share / dataset_drift / psi_max | C4 |
 | `screenshots/grafana_overview.png` | grafana nbo_overview под нагрузкой: rps 1.62k, timeouts 0, latency p95/p99, drift/psi | C4 |
 | `reports/mdd_latency_distribution.png` | распределения latency (existing vs improved) для MDD | C5 |
 
