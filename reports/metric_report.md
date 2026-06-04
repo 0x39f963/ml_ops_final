@@ -1,14 +1,14 @@
-# NBO offline metric report
+# Офлайн-отчет по метрикам NBO
 
-- holdout_quarter: `2022Q1`
+- holdout_quarter (отложенный квартал): `2022Q1`
 - k: `10`
-- n_clients_eval: `5555`
-- n_products: `25`
-- model_source: `b03_model_artifact`
+- n_clients_eval (клиентов в оценке): `5555`
+- n_products (продуктов): `25`
+- model_source (источник модели): `b03_model_artifact`
 
-## challenger vs champion
+## challenger против champion
 
-| metric | challenger | champion | uplift_abs |
+| метрика | challenger | champion | uplift_abs |
 |---|---:|---:|---:|
 | precision_at_10 | 0.003204 | 0.003258 | -0.000054 |
 | recall_at_10 | 0.474667 | 0.482667 | -0.008000 |
@@ -17,31 +17,31 @@
 | hit_rate_at_10 | 0.032043 | 0.032583 | -0.000540 |
 | per_product_auc_macro | 0.802959 | 0.541206 | 0.261753 |
 
-## uplift
+## прирост (uplift)
 
 - precision_at_10_abs: `-0.000054`
 - hit_rate_at_10_abs: `-0.000540`
-- policy: b04 writes absolute deltas only; b07 owns gate threshold.
+- считаем только абсолютные дельты; порог гейта задается в dag (b07).
 
-## coverage
+## покрытие (coverage)
 
-- scorable_share: `1.000000`
+- scorable_share (доля скорабельных клиентов): `1.000000`
 - not_scorable_share: `0.000000`
-- no-INN / NOT_SCORABLE rows are excluded from quality metric denominators.
+- строки без ИНН / со статусом NOT_SCORABLE в знаменатели метрик качества не входят.
 
-## denominators
+## знаменатели метрик
 
-- precision@10 / hit-rate@10: all scorable rows with non-empty scores.
-- recall@10 / MAP@10 / NDCG@10: scorable rows with at least one positive holdout label.
-- per-product ROC-AUC: only products with both classes in holdout; one-class products are `null` in JSON.
+- precision@10 / hit-rate@10: все скорабельные строки с непустыми скорами.
+- recall@10 / MAP@10 / NDCG@10: скорабельные строки, где есть хотя бы одна положительная метка в holdout.
+- per-product ROC-AUC: только продукты, где в holdout присутствуют оба класса; одноклассовые продукты - `null` в JSON.
 
-## calibration
+## калибровка
 
 - calibration_gap: `0.486151`
 
-## per-segment hit-rate@10
+## hit-rate@10 по сегментам
 
-| segment | n_clients | hit_rate_at_10 |
+| сегмент | n_clients | hit_rate_at_10 |
 |---|---:|---:|
 | SEG_0 | 1570 | 0.038217 |
 | SEG_1 | 1103 | 0.037171 |
@@ -51,9 +51,9 @@
 | SEG_5 | 451 | 0.044346 |
 | SEG_6 | 299 | 0.023411 |
 
-## notes
+## примечания
 
-- min_support: `50`; small product support can make per-product AUC noisy.
+- min_support: `50`; при малом support per-product AUC становится шумным.
 - auc_products_used: `25`.
 
-**Вывод:** challenger precision@10 is below champion; b05/b07 should read `metric_report.json` and apply downstream gate policy.
+**Вывод:** precision@10 у challenger ниже, чем у champion. Гейт (в dag) читает `metric_report.json` и в таком случае оставляет текущую модель (champion).

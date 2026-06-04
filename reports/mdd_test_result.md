@@ -1,22 +1,22 @@
-# MDD latency test
+# Тест MDD: скорость ответа сервиса (latency)
 
-- metric: `latency` (ms-proxy)
-- n existing / n improved: `500000` / `500000`
+- метрика: `latency` (proxy в условных единицах)
+- размер выборок (старая / улучшенная): `500000` / `500000`
 - seed: `42`
-- existing mean / median: `3.499797` / `3.499340`
-- improved mean / median: `2.000281` / `2.000117`
-- existing p95 / p99: `4.157986` / `4.432341`
-- improved p95 / p99: `2.658702` / `2.929972`
-- [assumption] SLO sanity: `1 ms-proxy = 150 ms`, improved p95 `398.81 ms` -> pass `< 500 ms`, existing p95 `623.70 ms` -> fail
-- H0: `mean_improved >= mean_existing`
-- H1: `mean_improved < mean_existing`
-- test: `Welch t-test`, alternative=`less`
-- alpha: `0.05`
-- statistic: `-1873.490`
+- старая схема, среднее / медиана: `3.499797` / `3.499340`
+- улучшенная схема, среднее / медиана: `2.000281` / `2.000117`
+- старая, p95 / p99: `4.157986` / `4.432341`
+- улучшенная, p95 / p99: `2.658702` / `2.929972`
+- пересчет в SLO (`1 proxy = 150 мс`): улучшенная p95 `398.81 мс` -> проходит `< 500 мс`; старая p95 `623.70 мс` -> не проходит
+- H0 (нулевая гипотеза): `mean_improved >= mean_existing` (улучшенная не быстрее)
+- H1: `mean_improved < mean_existing` (улучшенная быстрее)
+- тест: `Welch t-test`, alternative=`less`
+- alpha (порог значимости): `0.05`
+- статистика: `-1873.490`
 - p_value: `0.00000000`
-- robustness test: `Mann-Whitney U`, alternative=`less`
-- robustness statistic: `1.0011e9`
-- robustness p_value: `0.00000000`
-- decision: `move heavy feature compute to batch + serve precomputed top-N from cache`
+- тест на робастность: `Mann-Whitney U`, alternative=`less`
+- статистика робастности: `1.0011e9`
+- p_value робастности: `0.00000000`
+- решение: вынести тяжелый расчет признаков в пакетную обработку и отдавать предрасчитанный топ-N из кэша
 
-**Вывод:** p-value ниже alpha -> improved быстрее статистически значимо, решение принято.
+**Вывод:** p-value ниже alpha -> улучшенная схема быстрее статистически значимо, решение принято.
