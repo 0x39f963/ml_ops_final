@@ -1,4 +1,3 @@
-# Generated at: 2026-05-31 23:12:42 MSK
 """Smoke tests for MLflow registry alias switching."""
 
 from __future__ import annotations

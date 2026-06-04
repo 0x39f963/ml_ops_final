@@ -1,4 +1,3 @@
-# Generated at: 2026-05-31 23:10:19 MSK
 """MLflow tracking and registry helpers for NBO champion/challenger aliases."""
 
 from __future__ import annotations

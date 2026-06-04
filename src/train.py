@@ -1,4 +1,3 @@
-# Generated at: 2026-05-31 21:53:25 MSK
 """Train NBO champion and challenger models."""
 
 from __future__ import annotations

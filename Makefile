@@ -1,5 +1,3 @@
-# Generated at: 2026-05-31 20:37:33 MSK
-
 .PHONY: data test up down leak-check
 
 PYTHON ?= python3

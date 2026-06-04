@@ -1,5 +1,3 @@
-Generated at: 2026-06-01 07:38:06 MSK
-
 # API smoke evidence
 
 ## scope

@@ -1,5 +1,3 @@
-Generated at: 2026-05-31 20:37:33 MSK
-
 # b01 Verification Log
 
 This is the initial b01 scaffold log. Current follow-up evidence for F1-F4

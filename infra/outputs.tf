@@ -1,5 +1,3 @@
-# Generated at: 2026-06-01 13:41:00 MSK
-
 output "storage_manifest_path" {
   value = local_file.storage_manifest.filename
 }

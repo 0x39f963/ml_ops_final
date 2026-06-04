@@ -1,4 +1,3 @@
-# Generated at: 2026-05-31 22:38:44 MSK
 """Tests for offline NBO evaluation metrics and reports."""
 
 from __future__ import annotations

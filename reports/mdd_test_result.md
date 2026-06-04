@@ -1,5 +1,3 @@
-Generated at: 2026-05-31 23:00:58 MSK
-
 # MDD latency test
 
 - metric: `latency` (ms-proxy)

@@ -1,4 +1,3 @@
-# Generated at: 2026-05-31 22:33:57 MSK
 """Offline holdout evaluation for NBO champion and challenger models."""
 
 from __future__ import annotations

@@ -1,5 +1,3 @@
-# Generated at: 2026-06-01 16:55:05 MSK
-
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

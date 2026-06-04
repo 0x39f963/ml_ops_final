@@ -1,5 +1,3 @@
-Generated at: 2026-06-03 18:57:57 MSK
-
 # Evidence screenshots index
 
 Каталог визуальных доказательств. Все кадры с localhost, только публичные имена (`client_id`-хэш, `PROD_xx`, `SEG_x`).

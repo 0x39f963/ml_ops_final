@@ -1,4 +1,3 @@
-# Generated at: 2026-05-31 21:21:30 MSK
 """Parity-safe feature build and local feature store."""
 
 from __future__ import annotations

@@ -1,4 +1,3 @@
-# Generated at: 2026-05-31 21:53:25 MSK
 """Quarterly multi-label target build for NBO training."""
 
 from __future__ import annotations

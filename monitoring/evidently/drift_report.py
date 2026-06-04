@@ -1,4 +1,3 @@
-# Generated at: 2026-06-01 13:00:25 MSK
 """Build data drift reports for NBO batches.
 
 The public contract for Airflow is:

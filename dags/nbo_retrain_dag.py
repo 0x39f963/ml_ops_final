@@ -1,4 +1,3 @@
-# Generated at: 2026-06-01 09:49:30 MSK
 """Airflow retraining DAG for the NBO champion/challenger flow."""
 
 from __future__ import annotations

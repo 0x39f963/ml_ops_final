@@ -1,5 +1,3 @@
-Generated at: 2026-06-01 10:03:15 MSK
-
 # b07 DAG verification log
 
 ## local parse and smoke

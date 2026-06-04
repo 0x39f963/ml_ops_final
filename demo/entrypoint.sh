@@ -1,4 +1,3 @@
-# Generated at: 2026-06-01 16:55:05 MSK
 set -eu
 
 health_port="${DEMO_HEALTH_INTERNAL_PORT:-8502}"

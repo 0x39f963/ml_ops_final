@@ -1,4 +1,3 @@
-# Generated at: 2026-05-31 21:53:25 MSK
 """Smoke tests for NBO training on the synthetic stub."""
 
 from __future__ import annotations

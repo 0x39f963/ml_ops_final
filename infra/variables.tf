@@ -1,5 +1,3 @@
-# Generated at: 2026-06-01 13:41:00 MSK
-
 variable "environment" {
   type        = string
   description = "Environment name for NBO demo resources."

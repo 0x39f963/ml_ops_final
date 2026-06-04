@@ -1,4 +1,3 @@
-# Generated at: 2026-05-31 20:37:33 MSK
 """Data access wrappers for local real data with synthetic fallback."""
 
 from __future__ import annotations

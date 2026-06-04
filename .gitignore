@@ -1,5 +1,3 @@
-# Generated at: 2026-05-31 20:37:33 MSK
-
 # Synthetic stub policy:
 # data/sample_synth.parquet is allowed in git because it is synthetic.
 # Every other parquet under data/ is local-only and ignored.

@@ -1,5 +1,3 @@
-Generated at: 2026-05-31 22:44:22 MSK
-
 # NBO offline metric report
 
 - holdout_quarter: `2022Q1`

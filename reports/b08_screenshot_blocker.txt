@@ -1,5 +1,3 @@
-Generated at: 2026-06-01 13:09:44 MSK
-
 b08 browser screenshot blocker
 
 The local playwright-ui-test skill was selected for UI screenshots. Existing Playwright tooling was checked in the repository and active PATH:

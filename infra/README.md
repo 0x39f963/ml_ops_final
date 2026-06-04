@@ -1,5 +1,3 @@
-Generated at: 2026-06-01 13:41:00 MSK
-
 # NBO Terraform
 
 Учебная IaC-часть для Level 2 NBO scoring service.

@@ -1,4 +1,3 @@
-# Generated at: 2026-06-01 07:30:04 MSK
 """FastAPI serving for the NBO champion alias.
 
 Prometheus metric contract for b08:

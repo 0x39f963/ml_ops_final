@@ -1,5 +1,3 @@
-Generated at: 2026-05-31 23:19:38 MSK
-
 # MLflow registry demo
 
 ## scope

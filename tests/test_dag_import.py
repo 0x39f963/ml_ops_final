@@ -1,4 +1,3 @@
-# Generated at: 2026-06-01 09:49:30 MSK
 """Smoke tests for the NBO Airflow DAG module."""
 
 from __future__ import annotations

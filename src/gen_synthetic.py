@@ -1,4 +1,3 @@
-# Generated at: 2026-05-31 20:37:33 MSK
 """Generate synthetic public event data for local boot and CI."""
 
 from __future__ import annotations

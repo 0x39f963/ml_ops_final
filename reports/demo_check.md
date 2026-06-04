@@ -1,5 +1,3 @@
-Generated at: 2026-06-01 17:06:52 MSK
-
 ## demo check
 
 ## scope

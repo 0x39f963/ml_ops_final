@@ -1,4 +1,3 @@
-# Generated at: 2026-06-01 16:55:05 MSK
 """Streamlit demo for the NBO scoring API."""
 
 from __future__ import annotations

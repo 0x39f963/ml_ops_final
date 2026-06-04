@@ -1,4 +1,3 @@
-# Generated at: 2026-05-31 20:37:33 MSK
 #
 # Dev/runtime baseline. Airflow and Terraform are installed separately by
 # their containers or CLI in later branches.

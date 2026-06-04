@@ -1,5 +1,3 @@
-# Generated at: 2026-06-01 13:41:00 MSK
-
 # TODO[P2]: выбрать провайдер (Yandex Cloud / AWS / GCP) перед защитой, ветка b12.
 # Cloud deploy intentionally stays outside the default local Terraform path.
 # The local provider plan must not require cloud credentials.

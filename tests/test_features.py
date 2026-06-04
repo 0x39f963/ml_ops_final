@@ -1,4 +1,3 @@
-# Generated at: 2026-05-31 21:21:30 MSK
 """Tests for parity-safe feature build."""
 
 from __future__ import annotations

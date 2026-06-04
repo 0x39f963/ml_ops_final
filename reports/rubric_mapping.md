@@ -1,5 +1,3 @@
-Generated at: 2026-06-01 17:37:04 MSK
-
 # Rubric mapping C1..C5
 
 | criterion | requirement | artifact evidence | status |

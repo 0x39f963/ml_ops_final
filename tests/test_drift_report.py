@@ -1,4 +1,3 @@
-# Generated at: 2026-06-01 13:00:25 MSK
 """Smoke tests for the b08 drift report contract."""
 
 from __future__ import annotations

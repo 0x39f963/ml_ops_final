@@ -1,5 +1,3 @@
-Generated at: 2026-05-31 23:38:32 MSK
-
 # docker ps healthy evidence
 
 Command:
