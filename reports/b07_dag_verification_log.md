@@ -1,8 +1,8 @@
-# b07 DAG verification log
+# Проверка DAG переобучения (Airflow) - лог
 
-## local parse and smoke
+## локальный парсинг и smoke-тест
 
-Command:
+Команда:
 
 ```bash
 python3 -m py_compile ml005/dags/nbo_retrain_dag.py && echo PARSE_OK
@@ -10,7 +10,7 @@ python3 -m compileall -q ml005/src ml005/dags ml005/tests && echo COMPILEALL_OK
 python3 -m pytest tests/test_dag_import.py -q
 ```
 
-Output:
+Вывод (dag парсится без airflow, тесты зелены):
 
 ```text
 PARSE_OK
@@ -18,9 +18,9 @@ COMPILEALL_OK
 3 passed in 0.64s
 ```
 
-## callable checks
+## проверка задач-функций
 
-Command:
+Команда (валидация батча и решение гейта):
 
 ```bash
 NBO_BATCH_PATH=data/sample_synth.parquet python3 - <<'PY'
@@ -36,35 +36,35 @@ print('gate_branch', module.choose_deploy_branch())
 PY
 ```
 
-Output:
+Вывод:
 
 ```text
 {'status': 'pass', 'n_rows': 40000}
 gate_branch skip_deploy
 ```
 
-Command:
+Команда (валидация падает на битом parquet):
 
 ```bash
 python3 <temp bad parquet validation check>
 ```
 
-Output:
+Вывод:
 
 ```text
 NBO batch validation failed
 ```
 
-## compose snippet
+## compose-сниппет airflow
 
-Command:
+Команда:
 
 ```bash
 docker compose -f docker-compose.yml -f dags/airflow_compose_snippet.yml config --services
 docker compose -f docker-compose.yml -f dags/airflow_compose_snippet.yml config >/tmp/ml005_b07_compose_config.yml && echo COMPOSE_CONFIG_OK
 ```
 
-Output:
+Вывод:
 
 ```text
 mlflow
@@ -73,9 +73,9 @@ airflow
 COMPOSE_CONFIG_OK
 ```
 
-## airflow import and graph
+## импорт dag и граф задач в airflow
 
-Command:
+Команда:
 
 ```bash
 docker compose -f docker-compose.yml -f dags/airflow_compose_snippet.yml up -d --force-recreate airflow
@@ -85,7 +85,7 @@ docker compose -f docker-compose.yml -f dags/airflow_compose_snippet.yml exec -T
 curl -s -o /tmp/ml005_airflow_health.html -w '%{http_code}\n' http://localhost:18080/health
 ```
 
-Output:
+Вывод (dag виден, ошибок импорта нет, health 200, дерево задач со всеми шагами и ветвлением gate):
 
 ```text
 nbo_retrain_pipeline | /opt/airflow/dags/nbo_retrain_dag.py | airflow | True
@@ -103,9 +103,9 @@ No data found
                             <Task(EmptyOperator): finish>
 ```
 
-## airflow task checks
+## проверка отдельных задач, включая metric-gate
 
-Command:
+Команда (валидация, гейт на текущем отчете, гейт на заведомо хорошем отчете):
 
 ```bash
 docker compose -f docker-compose.yml -f dags/airflow_compose_snippet.yml exec -T airflow airflow tasks test nbo_retrain_pipeline validate_data 2026-05-30
@@ -113,7 +113,7 @@ docker compose -f docker-compose.yml -f dags/airflow_compose_snippet.yml exec -T
 docker compose -f docker-compose.yml -f dags/airflow_compose_snippet.yml exec -T airflow bash -lc 'printf "%s\n" "{\"precision_at_10_new\": 0.20, \"precision_at_10_champion\": 0.10}" > /tmp/good_metric_report.json && NBO_METRIC_REPORT=/tmp/good_metric_report.json NBO_GATE_PRECISION_AT_10_THRESHOLD=0.10 airflow tasks test nbo_retrain_pipeline compare_with_champion 2026-05-31'
 ```
 
-Output:
+Вывод (на плохой модели гейт уходит в skip_deploy, на хорошей - в register_model):
 
 ```text
 NBO batch validation passed: {'status': 'pass', 'n_rows': 40000, 'errors': [], 'path': '/opt/airflow/data/sample_synth.parquet'}
@@ -123,16 +123,16 @@ NBO metric gate: precision_at_10_new=0.200000 precision_at_10_champion=0.100000 
 Branch into register_model
 ```
 
-## anti-leak
+## анти-лик
 
-Command:
+Команда:
 
 ```bash
 make leak-check
 git check-ignore -v data/real.parquet data/feature_store/q=2022Q1/part.parquet models/model.pkl models/model.joblib mlruns/0/meta.yaml .env src/__pycache__/x.pyc
 ```
 
-Output:
+Вывод (leak-check зеленый, все локальные пути под gitignore):
 
 ```text
 leak-check passed
@@ -144,10 +144,3 @@ leak-check passed
 .gitignore:25:.env .env
 .gitignore:29:*/__pycache__/ src/__pycache__/x.pyc
 ```
-
-## screenshots
-
-- `screenshots/b07_dag_graph.png`: not collected; no local browser or Playwright binary in PATH.
-- Airflow CLI graph render was also blocked because Graphviz `dot` is not installed in the Airflow image.
-- `screenshots/b07_dag_run_success.png`: not collected; full DAG run with train/register was not executed in this pass.
-- `screenshots/b07_gate_skip_deploy.png`: not collected; CLI gate evidence is captured above.

@@ -1,70 +1,70 @@
-# API smoke evidence
+# Smoke-проверка API - доказательства
 
-## scope
+## что показываем
 
-- service: `nbo-api`
-- container: `nbo-api`
-- internal port: `8000`
-- host port: `${API_PORT:-18000}`
-- MLflow tracking URI in compose: `http://mlflow:5000`
-- model name: `nbo_topn`
-- alias read by API: `champion`
-- feature contract: `artifacts/feature_list.json`
+- сервис: `nbo-api`
+- контейнер: `nbo-api`
+- внутренний порт: `8000`
+- host-порт: `${API_PORT:-18000}`
+- адрес MLflow в compose: `http://mlflow:5000`
+- имя модели: `nbo_topn`
+- alias, который читает API: `champion`
+- контракт признаков: `artifacts/feature_list.json`
 - feature_list_hash: `b29e3f6fd325627e3b77475f1c0148ce298fa2a4c68d8cc2f8af75961ab4c98a`
 
-## metric contract for b08
+## контракт метрик (для мониторинга)
 
-| metric | type | labels | meaning |
+| метрика | тип | лейблы | что значит |
 |---|---|---|---|
-| `nbo_requests_total` | Counter | `endpoint`, `status_code` | API request count, excluding `/metrics` self-scrape |
-| `nbo_errors_total` | Counter | `endpoint` | 5xx responses and uncaught handler errors |
-| `nbo_request_latency_seconds` | Histogram | `endpoint` | request latency, buckets cover 0.5s and 0.8s SLO thresholds |
-| `nbo_score_distribution` | Histogram | `model_role` | emitted top-N probabilities |
-| `nbo_not_scorable_total` | Counter | none | population-filtered not_scorable responses |
+| `nbo_requests_total` | Counter | `endpoint`, `status_code` | число запросов к API (без self-scrape `/metrics`) |
+| `nbo_errors_total` | Counter | `endpoint` | ответы 5xx и необработанные ошибки |
+| `nbo_request_latency_seconds` | Histogram | `endpoint` | время ответа; корзины покрывают пороги SLO 0.5s и 0.8s |
+| `nbo_score_distribution` | Histogram | `model_role` | распределение вероятностей в выдаче топ-N |
+| `nbo_not_scorable_total` | Counter | нет | сколько запросов ушло в not_scorable |
 
-## syntax
+## синтаксис
 
-Command:
+Команда:
 
 ```bash
 python3 -c "import ast; ast.parse(open('src/serve_api.py').read()); print('parse ok')"
 ```
 
-Output:
+Вывод:
 
 ```text
 parse ok
 ```
 
-## pytest
+## тесты (pytest)
 
-Command:
+Команда:
 
 ```bash
 python3 -m pytest -q tests/test_api.py
 ```
 
-Output:
+Вывод:
 
 ```text
 ........                                                                 [100%]
 8 passed, 3 warnings in 0.98s
 ```
 
-Notes:
+Примечания:
 
-- warnings are from b02 fallback: `Feature store partition 2026Q1 is missing; building on the fly`.
-- tests monkeypatch startup to a dummy NBO model and synthetic population; no MLflow server or Docker is required.
+- предупреждения - от fallback b02: `Feature store partition 2026Q1 is missing; building on the fly`.
+- тесты подменяют старт на dummy-модель и синтетическую популяцию; ни MLflow-сервер, ни Docker не нужны.
 
-## local uvicorn smoke
+## локальный запуск (uvicorn) - smoke
 
-Command:
+Команда:
 
 ```bash
 MLFLOW_TRACKING_URI=http://localhost:15000 MLFLOW_MODEL_NAME=nbo_topn API_PORT=18000 .venv/bin/python -m uvicorn src.serve_api:app --host 0.0.0.0 --port 18000
 ```
 
-Startup note:
+Лог старта:
 
 ```text
 MLflow artifact does not expose an NBO product scoring interface.
@@ -72,18 +72,18 @@ Application startup complete.
 Uvicorn running on http://0.0.0.0:18000
 ```
 
-The API read the `champion` alias metadata, then used local `MODEL_DIR/model.pkl` because the current MLflow champion artifact is a demo sklearn artifact without a product scoring interface. The local fallback is allowed only when the local model metadata matches the feature_list hash, and b06 now selects the `champion` role from the local bundle.
+API прочитал метаданные alias `champion`, затем взял локальный `MODEL_DIR/model.pkl`, потому что текущий champion-артефакт в MLflow - это демо-sklearn без интерфейса скоринга продуктов. Локальный fallback разрешен только если метаданные локальной модели совпадают с хэшем `feature_list`; роль `champion` выбирается из локального бандла.
 
 ### health
 
-Command:
+Команда:
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}" http://localhost:18000/health
 curl -s http://localhost:18000/health | python3 -m json.tool
 ```
 
-Output:
+Вывод:
 
 ```text
 200
@@ -98,15 +98,15 @@ Output:
 }
 ```
 
-### score scorable
+### score: клиента можно скорить
 
-Command:
+Команда:
 
 ```bash
 curl -s -X POST http://localhost:18000/score -H "Content-Type: application/json" -d '{"client_id":"C0004e3cbdfb8","reference_date":"2026Q1"}' | python3 -m json.tool
 ```
 
-Output:
+Вывод (топ-10 продуктов с вероятностью + caveats):
 
 ```json
 {
@@ -134,15 +134,15 @@ Output:
 }
 ```
 
-### score not_scorable
+### score: клиента нельзя скорить (честный not_scorable)
 
-Command:
+Команда:
 
 ```bash
 curl -s -X POST http://localhost:18000/score -H "Content-Type: application/json" -d '{"client_id":"C_NOT_IN_POPULATION","reference_date":"2026Q1"}' | python3 -m json.tool
 ```
 
-Output:
+Вывод (status not_scorable, score=null, без выдуманного списка):
 
 ```json
 {
@@ -162,13 +162,13 @@ Output:
 
 ### model-info
 
-Command:
+Команда:
 
 ```bash
 curl -s http://localhost:18000/model-info | python3 -m json.tool
 ```
 
-Output excerpt:
+Фрагмент вывода:
 
 ```json
 {
@@ -183,13 +183,13 @@ Output excerpt:
 
 ### metrics
 
-Command:
+Команда:
 
 ```bash
 curl -s http://localhost:18000/metrics | grep -E "nbo_requests_total|nbo_request_latency_seconds_bucket|nbo_score_distribution_bucket|nbo_errors_total|nbo_not_scorable_total" | sed -n '1,80p'
 ```
 
-Output excerpt:
+Фрагмент вывода (метрики в формате Prometheus):
 
 ```text
 # HELP nbo_requests_total HTTP requests handled by the NBO API.
@@ -206,7 +206,7 @@ nbo_not_scorable_total 0.0
 
 ## docker compose
 
-Command:
+Команда:
 
 ```bash
 docker compose config -q
@@ -215,7 +215,7 @@ docker compose ps
 docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-health{{end}}' nbo-api
 ```
 
-Output:
+Вывод (контейнер nbo-api в состоянии healthy):
 
 ```text
 NAME           IMAGE              COMMAND                  SERVICE   CREATED         STATUS                   PORTS
@@ -224,13 +224,11 @@ nbo-api        ml005-nbo-api      "uvicorn src.serve_a..." nbo-api   8 seconds a
 healthy
 ```
 
-## b06-fix addendum
+## доработка b06: выбор роли champion из локального бандла
 
-Updated at: 2026-06-01 09:09:12 MSK
+### проверка: из бандла грузится именно champion
 
-### F1 local bundle role selection
-
-Command:
+Команда:
 
 ```bash
 MLFLOW_TRACKING_URI=http://localhost:15000 MLFLOW_MODEL_NAME=nbo_topn .venv/bin/python - <<'PY'
@@ -255,7 +253,7 @@ print('different_top3', champ_top != chall_top)
 PY
 ```
 
-Output:
+Вывод (`model_kind = local_joblib_champion`, выдачи champion и challenger разные):
 
 ```text
 model_kind local_joblib_champion
@@ -267,15 +265,15 @@ challenger_top3 [('PROD_18', 0.863807), ('PROD_22', 0.862831), ('PROD_17', 0.854
 different_top3 True
 ```
 
-### F2/F3 checks
+### мелкие правки
 
-- removed unused `_score_clients` `cutoff_end` local.
-- `FAMILY_ALIASES` remains a local mirror because b02 keeps the source mapping private as `features._SYNTH_FAMILY_ALIASES`; a code comment now points to that source.
-- grep check for dead `cutoff_end`, old challenger-first branch, masking markers, and raw product marker returned empty.
+- убрана неиспользуемая локальная переменная `cutoff_end` в `_score_clients`.
+- `FAMILY_ALIASES` оставлен локальной копией, так как b02 держит исходный маппинг приватным (`features._SYNTH_FAMILY_ALIASES`); в коде добавлен комментарий-ссылка на источник.
+- grep на мертвый `cutoff_end`, старую ветку "challenger-first", masking-маркеры и сырые имена продуктов - пусто.
 
-### post-fix docker
+### docker после правок
 
-Command:
+Команда:
 
 ```bash
 docker compose up -d --build nbo-api
@@ -283,7 +281,7 @@ docker compose ps
 curl -s http://localhost:18000/health | python3 -m json.tool
 ```
 
-Output:
+Вывод:
 
 ```text
 NAME           IMAGE              COMMAND                  SERVICE   CREATED          STATUS                   PORTS
@@ -300,17 +298,17 @@ nbo-api        ml005-nbo-api      "uvicorn src.serve_a..." nbo-api   12 seconds 
 }
 ```
 
-## leak-check
+## анти-лик
 
-Command:
+Команда:
 
 ```bash
 git -C . status --porcelain | grep -E "\.pkl$|\.joblib$|\.parquet$|mlruns|\.env$" || true
 ```
 
-Output:
+Вывод (пусто - запрещенных файлов в git нет):
 
 ```text
 ```
 
-No forbidden model bytes, parquet files, mlruns, or `.env` appeared in git status.
+Ни байтов модели, ни parquet, ни mlruns, ни `.env` в git-статусе не появилось.
