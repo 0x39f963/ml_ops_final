@@ -15,6 +15,7 @@
 | `screenshots/mlflow_experiments.png` | mlflow: эксперимент nbo_topn, прогоны обучения, зарегистрированная модель v1 | C2 |
 | `screenshots/ci_green.png` | github actions зеленый: checks (compile + smoke) + terraform (fmt/validate/plan) | C3 |
 | `screenshots/prometheus_targets.png` | prometheus targets все UP: nbo-api, node_exporter, prometheus | C4 |
+| `screenshots/grafana_overview.png` | grafana nbo_overview под нагрузкой: rps 1.62k, timeouts 0, latency p95/p99, drift/psi | C4 |
 | `reports/mdd_latency_distribution.png` | распределения latency (existing vs improved) для MDD | C5 |
 
 ## Текстовые доказательства

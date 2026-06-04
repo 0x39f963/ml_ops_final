@@ -70,7 +70,10 @@ GitHub Actions: job checks (компиляция + смоук на синтет�
 
 ![prometheus targets](prometheus_targets.png)
 
-Дашборд Grafana `nbo_overview` и нагрузочный тест online scoring разобраны в отчете [reports/load_test.md](../reports/load_test.md).
+### Grafana NBO overview под нагрузкой (C4)
+Дашборд после нагрузочного теста: `Load RPS` ~1.62k, `Client timeouts` 0, latency p95/p99 реагирует на нагрузку, `Drift share` 0% / `Max PSI` 0. Полный разбор - в отчете [reports/load_test.md](../reports/load_test.md): 50000 запросов `POST /score`, 0 таймаутов, p95 289 мс (slo p95 < 500 мс).
+
+![grafana overview](grafana_overview.png)
 
 ---
 
