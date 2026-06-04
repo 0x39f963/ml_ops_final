@@ -6,11 +6,17 @@
 
 домен обезличенный: вендор b2b-софта (продажи / продления лицензий). задача: по клиенту (`client_id`) на дату вернуть топ-10 продуктов, которые он скорее всего купит / продлит в следующем квартале (Q+1).
 
-> ## манифест проекта -> [manifest.md](manifest.md)
+> ## навигация по проекту
 >
-> главный документ по проекту, бизнес-описание: зачем система, какую боль закрывает, что делает, как устроена и какой уровень зрелости (Level 2) заявлен.
->
-> откуда взялась модель - мой реальный рабочий проект (сегментация клиентов, обезличенно): [docs/upstream_real_project.md](docs/upstream_real_project.md).
+> 1. **[манифест проекта](manifest.md)** - главный документ: зачем система, что делает, как устроена, какой уровень зрелости (Level 2) заявлен
+> 2. **[о модели](docs/upstream_real_project.md)** - откуда взялась модель: реальный рабочий проект, сегментация клиентской базы, 3d-карта сегментов
+> 3. **[папка скриншотов](screenshots/README.md)** - все доказательства работы в картинках
+> 4. **[требования к работе](#требования-к-работе)** - сверка по 5 критериям оценки с доказательствами:
+>     1. постановка цели (бизнес-метрика)
+>     2. уровень зрелости Level 2
+>     3. создание ML-системы
+>     4. управление рисками (SLI/SLO)
+>     5. MDD / ADR
 
 ниже - техническая часть.
 
@@ -213,61 +219,67 @@ client_id / model_version / segment_id / status / score / recommended_action / c
 
 ---
 
-## сверка по критериям оценки
+## Требования к работе
 
-главные документы: [manifest.md](manifest.md) (бизнес-описание), [reports/rubric_mapping.md](reports/rubric_mapping.md), [docs/sli_slo.md](docs/sli_slo.md), [adr/0001-latency-mdd-decision.md](adr/0001-latency-mdd-decision.md), [notebooks/HW_Design.ipynb](notebooks/HW_Design.ipynb).
+работа оценивается по 5 критериям. по каждому ниже: что требуется по заданию, что я сделал, и доказательство (документ или скриншот). сводная таблица соответствия - в [reports/rubric_mapping.md](reports/rubric_mapping.md).
 
-ниже по каждому критерию рубрики: что требуется, что сделано, и доказательство.
+### 1. постановка цели (критерий C1)
 
-### C1 - постановка цели (бизнес-метрика + метрики ML)
+в работе требуется выбрать верную бизнес-метрику и под нее верные метрики ML-проектирования.
 
-- **требование:** верная бизнес-метрика и верные метрики ML-проектирования.
-- **сделано:** бизнес-метрика - **hit-rate@10** (доля клиентов, у кого хотя бы 1 из топ-10 предложений реально сбылся в Q+1). ML-прокси - precision@10 / recall@10 / map@10 / ndcg@10 + per-product auc; есть метрик-дерево. подробно в [manifest.md](manifest.md) (разделы 7-8), числа - в [reports/metric_report.md](reports/metric_report.md).
-- **доказательство:** сервис по клиенту реально отдает топ-10 продуктов с вероятностью.
+я выбрал главной бизнес-метрикой **hit-rate@10** - долю клиентов, у которых хотя бы один из 10 предложенных продуктов реально сбылся в следующем квартале. она прямо измеряет пользу для продаж. под ней идут модельные метрики precision@10 / recall@10 / map@10 / ndcg@10 и per-product auc, выстроено метрик-дерево (бизнес -> модель -> технические). разбор - в [манифесте](manifest.md), разделы 7-8; посчитанные числа - в [reports/metric_report.md](reports/metric_report.md).
 
-контракт scoring-API (`/score`, `/health`, `/model-info`, `/metrics`):
+как доказательство, что сервис реально отдает топ-10 по клиенту.
+
+контракт API (`/score`, `/health`, `/model-info`, `/metrics`):
 
 ![scoring api](screenshots/api_swagger.png)
 
-demo по клиенту -> топ-10 (режим `inn`: реальный инн хэшируется в браузере, в api уходит только `client_id`-хэш):
+demo: ввел клиента, получил топ-10 продуктов с вероятностью:
 
 ![demo top-10](screenshots/demo_top10.png)
 
-### C2 - уровень зрелости Level 2
+### 2. уровень зрелости Level 2 (критерий C2)
 
-- **требование:** задокументирован и работает полный жизненный цикл; вывод плохой модели из эксплуатации через переключение трафика; заявлен и соответствует уровню 2.
-- **сделано:** champion/challenger через mlflow alias; gate в airflow dag решает register или skip; полный цикл данные -> обучение -> оценка -> registry -> сервинг -> мониторинг. описание - в [manifest.md](manifest.md) (раздел 4), alias / promote / rollback - в [reports/registry_demo.md](reports/registry_demo.md).
-- **доказательство:** airflow dag `nbo_retrain_pipeline` - конвейер переобучения:
+в работе требуется задокументировать и показать работающим полный жизненный цикл модели, включая вывод плохой модели из эксплуатации через переключение трафика, и заявить уровень зрелости.
+
+я заявил **Level 2** и собрал его: модель версионируется в mlflow, рабочая версия и кандидат переключаются через alias; airflow-dag сам переобучает и через гейт решает, выпускать кандидата или оставить текущую модель; собран полный цикл данные -> обучение -> оценка -> registry -> сервинг -> мониторинг. описание - в [манифесте](manifest.md), раздел 4; механика alias / promote / rollback - в [reports/registry_demo.md](reports/registry_demo.md).
+
+как доказательство - airflow-dag переобучения:
 
 ![airflow dag](screenshots/airflow_dags.png)
 
-прогон dag со всеми задачами, включая ветку `compare_with_champion -> register_model / skip_deploy` (это и есть автоматический вывод плохой модели через переключение трафика):
+прогон dag со всеми задачами; ветка `compare_with_champion -> register_model / skip_deploy` - это и есть автоматический вывод плохой модели через переключение трафика:
 
 ![airflow run](screenshots/airflow_dag_run.png)
 
-### C3 - создание ML-системы (IaC + работающие компоненты)
+### 3. создание ML-системы (критерий C3)
 
-- **требование:** код + грамотный IaC + все компоненты работают; backend - `docker ps` показывает Up(healthy); frontend - `/health` отвечает 200.
-- **сделано:** terraform (local provider) + ci/cd (github actions); весь стек поднимается одной командой `docker compose up -d`, у сервисов healthcheck; terraform-план - в [reports/terraform_plan.txt](reports/terraform_plan.txt).
-- **доказательство:** `docker ps` - сервисы в состоянии Up(healthy):
+в работе требуется реализовать систему через IaC, чтобы все компоненты работали: для backend показать `docker ps` со статусом Up(healthy), для frontend - доступный `/health` с кодом 200.
+
+я подготовил инфраструктуру как код (terraform, local provider) и ci/cd (github actions); весь стек поднимается одной командой `docker compose up -d`, у сервисов настроены healthcheck. terraform-план - в [reports/terraform_plan.txt](reports/terraform_plan.txt).
+
+как доказательство - `docker ps`, сервисы Up(healthy):
 
 ![docker ps healthy](screenshots/docker_ps_healthy.png)
 
-`/health` отвечает 200, модель загружена по alias champion:
+`/health` отвечает 200:
 
 ![health 200](screenshots/api_health.png)
 
-### C4 - управление рисками (SLI/SLO на 3 уровнях)
+### 4. управление рисками (критерий C4)
 
-- **требование:** SLI на 3 уровнях (технический / модельный / бизнес) с критическими порогами SLO.
-- **сделано:** все три уровня с normal / warning / critical и incident-action, с указанием источника каждой метрики (promql / evidently / dag-state): [docs/sli_slo.md](docs/sli_slo.md). сбор метрик - prometheus + grafana + evidently (дрейф данных), конфиги в [monitoring/](monitoring/).
-- **доказательство:** полная таблица SLI/SLO - в [docs/sli_slo.md](docs/sli_slo.md); живой дашборд grafana - в evidence-паке.
+в работе требуется сформулировать SLI на трех уровнях (технический, модельный, бизнес) и задать критические пороги SLO.
 
-### C5 - принятие решений по MDD (ADR)
+я подготовил это документом [docs/sli_slo.md](docs/sli_slo.md): все три уровня, у каждого показателя норма / тревога / авария, действие при срабатывании и источник метрики (prometheus / evidently / состояние dag). сбор метрик - prometheus + grafana + evidently (дрейф данных), конфиги в [monitoring/](monitoring/). скрин живого дашборда grafana добавляю в галерею по мере досъемки.
 
-- **требование:** ADR с гипотезами H0/H1, статистическим тестом, p-value, уровнем значимости и архитектурным решением.
-- **сделано:** сравнение двух распределений latency, H0/H1, welch t-test + mann-whitney u, alpha 0.05, p ~ 0 -> H0 отклонена, решение (вынести расчет фич в batch + кэш) зафиксировано в [adr/0001-latency-mdd-decision.md](adr/0001-latency-mdd-decision.md); расчет - в [reports/mdd_test_result.md](reports/mdd_test_result.md) и [notebooks/mdd_latency.ipynb](notebooks/mdd_latency.ipynb).
-- **доказательство:** распределения latency (текущая схема vs улучшенная с кэшом):
+### 5. принятие решений по MDD (критерий C5)
+
+в работе требуется применить MDD и оформить решение в формате ADR: гипотезы H0/H1, статистический тест, p-value, уровень значимости и итоговое архитектурное решение.
+
+я подготовил ADR [adr/0001-latency-mdd-decision.md](adr/0001-latency-mdd-decision.md): сравнил два распределения времени ответа, сформулировал H0/H1, прогнал welch t-test и тест манна-уитни, взял alpha 0.05; p-value практически ноль, H0 отклонена; решение - вынести тяжелый расчет в batch + кэш. сам расчет - в [reports/mdd_test_result.md](reports/mdd_test_result.md) и [notebooks/mdd_latency.ipynb](notebooks/mdd_latency.ipynb).
+
+как доказательство - распределения времени ответа (текущая схема и улучшенная с кэшом):
 
 ![mdd latency](reports/mdd_latency_distribution.png)
 
