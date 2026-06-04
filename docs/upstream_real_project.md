@@ -40,6 +40,12 @@ Affinity-кластеры раскрываются в 7 финальных се�
 
 ![матрица выбора кандидата](upstream/segmentation_candidate_matrix.png)
 
+Клиенты в пространстве признаков, t-SNE 3D, цвет - сегмент `S0..S6`:
+
+![сегменты в 3d](upstream/segments_3d.png)
+
+Интерактивная версия (можно вращать): [segments_3d.html](upstream/segments_3d.html). ИНН в подсказках замаскированы. Чтобы открыть прямо в браузере с GitHub: [htmlpreview](https://htmlpreview.github.io/?https://github.com/0x39f963/ml_ops_final/blob/master/docs/upstream/segments_3d.html).
+
 ---
 
 ## 2. Субсегментация
