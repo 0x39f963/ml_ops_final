@@ -1,12 +1,12 @@
-# docker ps healthy evidence
+# docker ps healthy (доказательство)
 
-Command:
+команда:
 
 ```bash
 MLFLOW_PORT=15000 docker compose ps mlflow
 ```
 
-Output:
+вывод:
 
 ```text
 NAME           IMAGE              COMMAND                  SERVICE   CREATED          STATUS                    PORTS

@@ -1,35 +1,37 @@
-# NBO monitoring
+# Мониторинг NBO
+
+Тут описано, как у сервиса устроен мониторинг: сбор метрик, дашборд и проверка дрифта данных.
 
 ## Что входит
 
-- Prometheus scrape: `nbo-api:8000/metrics`, `node_exporter:9100`, self-scrape.
-- Grafana provisioning: datasource `Prometheus`, dashboard `NBO / NBO overview`.
+- Prometheus собирает метрики: `nbo-api:8000/metrics`, `node_exporter:9100`, плюс сам себя.
+- Grafana поднимается с готовым datasource `Prometheus` и дашбордом `NBO / NBO overview`.
 - Drift job: `monitoring/evidently/drift_report.py`.
-- Drift live metrics: variant A, node_exporter textfile collector.
-  - output file: `reports/prometheus/nbo_drift.prom`
-  - Prometheus metrics: `nbo_drift_share`, `nbo_dataset_drift`, `nbo_psi_max`
+- Живые drift-метрики идут через node_exporter (textfile collector):
+  - файл с метриками: `reports/prometheus/nbo_drift.prom`
+  - метрики в Prometheus: `nbo_drift_share`, `nbo_dataset_drift`, `nbo_psi_max`
 
-## Run
+## Запуск
 
 ```bash
 cd ml005
 docker compose up -d nbo-api prometheus grafana node_exporter
 ```
 
-URLs:
+Адреса:
 
 - Prometheus: `http://localhost:${PROMETHEUS_PORT:-9090}`
 - Grafana: `http://localhost:${GRAFANA_PORT:-3000}`
-- Grafana demo login: `${GF_SECURITY_ADMIN_USER:-admin}` / `${GF_SECURITY_ADMIN_PASSWORD:-admin}`
+- Логин в Grafana (demo): `${GF_SECURITY_ADMIN_USER:-admin}` / `${GF_SECURITY_ADMIN_PASSWORD:-admin}`
 
-Dashboard:
+Дашборд:
 
-- folder: `NBO`
-- name: `NBO overview`
+- папка: `NBO`
+- имя: `NBO overview`
 
-## Evidently / drift smoke
+## Evidently / smoke-проверка дрифта
 
-Synthetic-only command for CI/boot:
+Команда на синтетике (для CI и старта):
 
 ```bash
 cd ml005
@@ -39,59 +41,59 @@ python monitoring/evidently/drift_report.py \
   --out reports/evidently_drift_smoke.html
 ```
 
-Expected smoke result on identical synthetic data:
+Что должно получиться на одинаковой синтетике:
 
-- HTML report exists at `reports/evidently_drift_smoke.html`
-- printed summary has `drift_share`
-- textfile metrics exist at `reports/prometheus/nbo_drift.prom`
+- html-отчет лежит в `reports/evidently_drift_smoke.html`
+- в выводе есть `drift_share`
+- textfile-метрики лежат в `reports/prometheus/nbo_drift.prom`
 
-`reports/*.html` and `reports/prometheus/*.prom` are gitignored, because real-data reports are local-only.
+`reports/*.html` и `reports/prometheus/*.prom` в git не идут: отчеты на реальных данных держу локально.
 
-## API metric contract
+## Контракт API-метрик
 
-Evidence source: `src/serve_api.py` metric contract and `/metrics` implementation.
+Источник: контракт метрик в `src/serve_api.py` и реализация `/metrics`.
 
-| metric name | PromQL | panel |
+| метрика | PromQL | панель |
 |---|---|---|
 | `nbo_request_latency_seconds_bucket` | `histogram_quantile(0.95, sum(rate(nbo_request_latency_seconds_bucket{job="nbo-api",endpoint="/score"}[5m])) by (le))` | `/score latency p95/p99` |
 | `nbo_request_latency_seconds_bucket` | `histogram_quantile(0.99, sum(rate(nbo_request_latency_seconds_bucket{job="nbo-api",endpoint="/score"}[5m])) by (le))` | `/score latency p95/p99` |
 | `nbo_requests_total` | `sum(rate(nbo_requests_total{job="nbo-api",endpoint="/score"}[5m]))` | `/score request rate` |
 | `nbo_errors_total` / `nbo_requests_total` | `sum(rate(nbo_errors_total{job="nbo-api",endpoint="/score"}[5m])) / clamp_min(sum(rate(nbo_requests_total{job="nbo-api",endpoint="/score"}[5m])), 0.001)` | `/score error-rate` |
-| `nbo_score_distribution_bucket` | available for ad-hoc score distribution checks | not in first dashboard |
-| `nbo_not_scorable_total` | available for population-filter checks | not in first dashboard |
+| `nbo_score_distribution_bucket` | для разовых проверок распределения score | нет в первом дашборде |
+| `nbo_not_scorable_total` | для проверок population-filter | нет в первом дашборде |
 | `nbo_drift_share` | `max(nbo_drift_share)` | `Drift share` |
 | `nbo_psi_max` | `max(nbo_psi_max)` | `Max PSI` |
 
-## Alerts
+## Алерты
 
-Prometheus loads `monitoring/alerts/nbo_rules.yml`.
+Prometheus подгружает `monitoring/alerts/nbo_rules.yml`.
 
-Rules:
+Правила:
 
-- `NBOHighErrorRate`: critical when `/score` error-rate > 3 percent for 5m (threshold preliminary, calibrate on baseline).
-- `NBOHighP95Latency`: critical when `/score` p95 latency > 800 ms for 5m (threshold preliminary, calibrate on baseline).
+- `NBOHighErrorRate`: критично, когда error-rate `/score` > 3% в течение 5 минут (порог предварительный, откалибрую на baseline).
+- `NBOHighP95Latency`: критично, когда p95 latency `/score` > 800 мс в течение 5 минут (порог предварительный, откалибрую на baseline).
 
-Recording rules:
+Recording-правила:
 
 - `nbo:score_latency_p95_seconds`
 - `nbo:score_latency_p99_seconds`
 - `nbo:score_error_rate`
 
-## DAG contract for b07
+## Контракт DAG (b07)
 
-Import path:
+Импорт:
 
 ```python
 from monitoring.evidently.drift_report import build_drift_report
 ```
 
-Function contract:
+Контракт функции:
 
 ```python
 build_drift_report(reference_df, current_df, score_col, target_cols, out_html) -> dict
 ```
 
-Returned keys include:
+Возвращаемые ключи:
 
 - `dataset_drift`
 - `drift_share`
@@ -99,4 +101,4 @@ Returned keys include:
 - `psi_max`
 - `generated_at`
 
-Current DAG state: the Airflow Prometheus exporter is not configured in this `docker-compose.yml`, so the Grafana DAG success panel stays a text note. A statsd-exporter or an Airflow Prometheus exporter would turn it into a PromQL panel.
+Сейчас Airflow в этом `docker-compose.yml` не отдает метрики в Prometheus, поэтому панель `DAG success-rate` в Grafana остается текстовой. Если добавить statsd-exporter или Airflow Prometheus exporter, ее можно заменить на PromQL-панель.

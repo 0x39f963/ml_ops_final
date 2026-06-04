@@ -1,14 +1,14 @@
 # NBO Terraform
 
-Учебная IaC-часть для Level 2 NBO scoring service.
+Учебная IaC-часть для сервиса скоринга NBO (Level 2).
 
 Что описано:
 
-- storage для scoring-batch файлов (`nbo-batches`)
-- MLflow tracking/artifact contract и alias `champion` / `challenger`
-- Airflow DAG manifest: фактический `dag_id=nbo_retrain_pipeline`, файл `dags/nbo_retrain_dag.py`
-- API contract: `nbo-api`, `/health`, `/score`, `/batch-score`, `/metrics`
-- pipeline contract: S3 key -> `feature_list.json` -> metric gate -> branch join
+- хранилище для batch-файлов скоринга (`nbo-batches`)
+- контракт MLflow (tracking / artifacts) и alias `champion` / `challenger`
+- манифест Airflow DAG: фактический `dag_id=nbo_retrain_pipeline`, файл `dags/nbo_retrain_dag.py`
+- контракт API: `nbo-api`, `/health`, `/score`, `/batch-score`, `/metrics`
+- контракт пайплайна: S3 key -> `feature_list.json` -> metric-gate -> ветвление
 
 В этом контуре cloud не поднимается. `cloud.tf` - заглушка для будущего облачного деплоя: провайдер пока не выбран, ресурсы полностью закомментированы, `terraform init/validate/plan` не требуют cloud credentials.
 
@@ -25,11 +25,11 @@ terraform plan -destroy -out=tfdestroy
 terraform show -no-color tfdestroy > ../reports/terraform_destroy_plan.txt
 ```
 
-## CI vs orchestration boundary
+## Граница CI и оркестрации
 
-CI - быстрый PR gate: install deps, compile `src` / `dags`, smoke tests on synthetic, Terraform fmt/validate/plan. Training must NOT run in CI.
+CI - быстрый gate на PR: ставит зависимости, компилирует `src` / `dags`, гоняет smoke-тесты на синтетике, делает Terraform fmt/validate/plan. Обучение в CI не запускается.
 
-Orchestration - Airflow DAG: sensor waits for a batch, validates data, builds features, trains, evaluates, applies metric gate, and promotes or skips model alias. Это периодический runtime-процесс, не job pull request.
+Оркестрация - это Airflow DAG: sensor ждет батч, проверяет данные, считает фичи, обучает, оценивает, проходит metric-gate и промоутит либо пропускает alias модели. Это периодический runtime-процесс, он живет отдельно от pull request.
 
 ## Удаление
 
