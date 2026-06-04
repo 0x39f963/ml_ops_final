@@ -271,7 +271,7 @@ demo: ввел клиента, получил топ-10 продуктов с в
 
 ![health 200](screenshots/api_health.png)
 
-ci (github actions) зеленый - job checks (компиляция + смоук на синтетике) и job terraform (fmt / validate / plan):
+ci (github actions) зеленый - job checks (компиляция + смоук-тесты) и job terraform (fmt / validate / plan):
 
 ![ci green](screenshots/ci_green.png)
 
@@ -285,7 +285,7 @@ ci (github actions) зеленый - job checks (компиляция + смоу
 
 ![prometheus targets](screenshots/prometheus_targets.png)
 
-а технический порог по latency я не просто записал, а проверил нагрузочным тестом: 50000 одиночных `POST /score`, все ответы 200, 0 клиентских таймаутов, p95 289 мс (целевой slo p95 < 500 мс выполняется). полный разбор эксперимента - в [reports/load_test.md](reports/load_test.md).
+технический порог по latency дополнительно подтвердил нагрузочным тестом: 50000 одиночных `POST /score`, все ответы 200, 0 клиентских таймаутов, p95 289 мс (целевой slo p95 < 500 мс выполняется). полный разбор эксперимента - в [reports/load_test.md](reports/load_test.md).
 
 дашборд grafana `nbo_overview` под этой нагрузкой: `Load RPS` ~1.62k, `Client timeouts` 0, latency p95/p99 реагирует на запросы:
 

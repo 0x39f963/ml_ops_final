@@ -57,7 +57,7 @@
 ![docker stats](docker_stats.png)
 
 ### CI зеленый (C3)
-GitHub Actions: job checks (компиляция + смоук на синтетике) и job terraform (fmt / validate / plan).
+GitHub Actions: job checks (компиляция + смоук-тесты) и job terraform (fmt / validate / plan).
 
 ![ci green](ci_green.png)
 
