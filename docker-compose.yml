@@ -34,7 +34,12 @@ services:
   nbo-api:
     build: .
     container_name: nbo_nbo-api
-    command: uvicorn src.serve_api:app --host 0.0.0.0 --port 8000
+    command: >
+      /bin/sh -lc "
+      uvicorn src.serve_api:app
+      --host 0.0.0.0
+      --port 8000
+      --workers ${NBO_UVICORN_WORKERS:-1}"
     env_file:
       - path: .env
         required: false

@@ -90,7 +90,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(nbo_request_latency_seconds_bucket{job=\"nbo-api\",endpoint=\"/score\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nbo_request_latency_seconds_bucket{job=\"nbo-api\"}[5m])) by (le))",
           "legendFormat": "p95",
           "range": true,
           "refId": "A"
@@ -101,13 +101,13 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(nbo_request_latency_seconds_bucket{job=\"nbo-api\",endpoint=\"/score\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nbo_request_latency_seconds_bucket{job=\"nbo-api\"}[5m])) by (le))",
           "legendFormat": "p99",
           "range": true,
           "refId": "B"
         }
       ],
-      "title": "/score latency p95/p99",
+      "title": "API latency p95/p99",
       "type": "timeseries"
     },
     {
@@ -129,15 +129,15 @@
               },
               {
                 "color": "yellow",
-                "value": 0.01
+                "value": 1
               },
               {
                 "color": "red",
-                "value": 0.03
+                "value": 10
               }
             ]
           },
-          "unit": "percentunit"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -169,13 +169,13 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(nbo_errors_total{job=\"nbo-api\",endpoint=\"/score\"}[5m])) / clamp_min(sum(rate(nbo_requests_total{job=\"nbo-api\",endpoint=\"/score\"}[5m])), 0.001)",
-          "legendFormat": "error-rate",
+          "expr": "max(nbo_load_transport_failures_total) or vector(0)",
+          "legendFormat": "transport-timeouts",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "/score error-rate",
+      "title": "Client timeouts (last load)",
       "type": "stat"
     },
     {
@@ -220,13 +220,13 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(nbo_requests_total{job=\"nbo-api\",endpoint=\"/score\"}[5m]))",
-          "legendFormat": "rps",
+          "expr": "max(nbo_load_requests_per_second) or sum(rate(nbo_requests_total{job=\"nbo-api\"}[5m]))",
+          "legendFormat": "load-rps",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "/score request rate",
+      "title": "Load RPS",
       "type": "stat"
     },
     {
@@ -383,7 +383,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "DAG success-rate: [assumption]\\n\\nCurrent compose does not expose Airflow Prometheus metrics. Use Airflow UI for live state now; add statsd-exporter or airflow exporter before replacing this note with a PromQL panel.",
+        "content": "status DAG: airflow в этом compose не отдает метрики в prometheus, поэтому состояние прогонов смотрю в airflow ui. панель оставил текстовой.",
         "mode": "markdown"
       },
       "pluginVersion": "11.2.2",
