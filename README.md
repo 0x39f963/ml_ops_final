@@ -19,7 +19,7 @@
 >     5. MDD / ADR
 > 5. **практические проверки** - дополнительные проверки локальной сборки:
 >     - [нагрузочный тест](reports/load_test.md) - сколько запросов в секунду держит `/score` и укладывается ли в slo по latency
->     - [мониторинг дрифта](reports/drift_monitoring.md) - дрифт входных данных между 2024 и 2025, с разбором простым языком
+>     - [мониторинг дрифта](reports/drift_monitoring.md) - дрифт входных данных между 2024 и 2025
 
 ниже - техническая часть.
 
@@ -300,7 +300,7 @@ ci (github actions) зеленый - job checks (компиляция + смоу
 
 ![grafana drift](screenshots/grafana_drift.png)
 
-разбор простым языком, с остальными кадрами (evidently, prometheus) - в [reports/drift_monitoring.md](reports/drift_monitoring.md).
+подробнее, с остальными кадрами (evidently, prometheus) - в [reports/drift_monitoring.md](reports/drift_monitoring.md).
 
 ### 5. принятие решений по MDD (критерий C5)
 

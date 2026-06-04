@@ -79,7 +79,7 @@ GitHub Actions: job checks (компиляция + смоук-тесты) и job
 
 ## Дрифт данных (C4)
 
-Проверка дрифта на обезличенных реальных данных: опорный период 2024 год, текущий - 2025. Простой разбор - в отчете [reports/drift_monitoring.md](../reports/drift_monitoring.md).
+Проверка дрифта на обезличенных реальных данных: опорный период 2024 год, текущий - 2025. Разбор - в отчете [reports/drift_monitoring.md](../reports/drift_monitoring.md).
 
 ### Дашборд Grafana с дрифтом (C4)
 `Drift share` 30% (желтый), `Max PSI` 27.6 (красный) рядом с latency и нагрузкой.
