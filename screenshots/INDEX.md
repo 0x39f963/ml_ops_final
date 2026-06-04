@@ -27,6 +27,7 @@
 | `reports/b07_dag_verification_log.md` | импорт dag, дерево задач, решения gate (skip/register) | C2 |
 | `reports/terraform_plan.txt` | terraform plan: манифесты стека (5 to add) | C3 |
 | `reports/load_test.md` | нагрузочный тест /score: 50k запросов, 0 таймаутов, p95 289 мс (slo p95 < 500 мс) | C4 / C1 |
+| `reports/drift_monitoring.md` | дрифт входных данных: 2024 vs 2025, drift share 0.30, max psi 27.63, объяснение | C4 |
 | `docs/sli_slo.md` | SLI/SLO на 3 уровнях с критическими порогами | C4 |
 
 **Вывод:** evidence по всем критериям C1-C5 снято. По C4, кроме документа SLI/SLO, есть и живые кадры: prometheus targets UP и нагрузочный тест с проверкой технического порога latency. Визуальные кадры и текстовые логи покрывают весь контур: данные, обучение, registry, сервинг, оркестрация, инфраструктура, мониторинг.

@@ -158,7 +158,7 @@ docker compose up -d airflow   # ui http://localhost:8080
 
 - prometheus скрейпит `nbo-api:8000/metrics` + node-exporter, держит alert-правила (p95 latency, error-rate).
 - grafana авто-провижинит дашборд `nbo_overview`: p95/p99 latency, error-rate, rps, drift share.
-- evidently/drift: считаю data drift + psi на выходах пайплайна, пишу html-отчет + `nbo_drift.prom` для node-exporter (живая drift-метрика). вызывается standalone и шагом из dag.
+- evidently/drift: считаю data drift + psi на выходах пайплайна, пишу html-отчет + `nbo_drift.prom` для node-exporter (живая drift-метрика). вызывается standalone и шагом из dag. разбор прогона на реальных данных - [reports/drift_monitoring.md](reports/drift_monitoring.md).
 - sli/slo на 3 уровнях (технический / модель-данные / бизнес) с порогами и incident-action: [docs/sli_slo.md](docs/sli_slo.md). числовые пороги помечены как предварительные, до калибровки на baseline.
 
 ```bash
@@ -290,6 +290,8 @@ ci (github actions) зеленый - job checks (компиляция + смоу
 дашборд grafana `nbo_overview` под этой нагрузкой: `Load RPS` ~1.62k, `Client timeouts` 0, latency p95/p99 реагирует на запросы:
 
 ![grafana overview](screenshots/grafana_overview.png)
+
+отдельно проверил дрифт входных данных - сравнил обезличенные данные за 2024 и 2025 годы. из 10 показателей заметно сдвинулись 3 (доля 0.30): сильнее всего год/дата (периоды разные) и состав клиентов (в 2025 другие клиенты). evidently строит наглядный отчет по столбцам, а три числа (drift share, флаг дрифта, max psi) уходят в prometheus и видны в grafana. разбор простым языком - в [reports/drift_monitoring.md](reports/drift_monitoring.md).
 
 ### 5. принятие решений по MDD (критерий C5)
 
