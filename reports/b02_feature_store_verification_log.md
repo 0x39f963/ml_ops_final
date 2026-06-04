@@ -1,16 +1,16 @@
-Updated at: 2026-05-31 21:41:05 MSK
+# b02 - проверка feature store
 
-# b02 Feature Store Verification Log
+лог по фиче-слою b02: pit-safe фичи, стабильность feature_list и его hash, проверки на утечку.
 
-## parse
+## парсинг
 
-Command:
+команда:
 
 ```bash
 python3 -c "import ast; ast.parse(open('src/features.py').read()); print('parse ok')"
 ```
 
-Output:
+вывод:
 
 ```text
 parse ok
@@ -18,13 +18,13 @@ parse ok
 
 ## pytest
 
-Command:
+команда:
 
 ```bash
 pytest tests/test_features.py -v
 ```
 
-Output:
+вывод:
 
 ```text
 tests/test_features.py::test_build_returns_matrix PASSED
@@ -38,29 +38,29 @@ tests/test_features.py::test_get_features_parity PASSED
 8 passed in 0.41s
 ```
 
-## build_and_store
+## сборка и запись в feature store
 
-Command:
+команда:
 
 ```bash
 python3 -c "from src.features import build_and_store; print(build_and_store(['2025Q3','2025Q4']))"
 ```
 
-Output:
+вывод:
 
 ```text
-/home/x39963/web/niki/mo-dz/ml005/data/feature_store
+data/feature_store
 ```
 
-## feature_list head
+## начало feature_list
 
-Command:
+команда:
 
 ```bash
 python3 -c "import json; d=json.load(open('artifacts/feature_list.json')); print(d['version'], d['hash']); [print(f) for f in d['features'][:12]]"
 ```
 
-Output:
+вывод:
 
 ```text
 1 b29e3f6fd325627e3b77475f1c0148ce298fa2a4c68d8cc2f8af75961ab4c98a
@@ -78,9 +78,11 @@ Output:
 {'name': 'affinity_fam_software_box', 'dtype': 'int64'}
 ```
 
-## hash stability
+## стабильность hash
 
-Command:
+проверяю, что hash feature_list не зависит от сида данных - на двух разных сидах должен совпасть.
+
+команда:
 
 ```bash
 python3 - <<'PY'
@@ -94,16 +96,16 @@ for seed in (101, 202):
 PY
 ```
 
-Output:
+вывод:
 
 ```text
 101 b29e3f6fd325627e3b77475f1c0148ce298fa2a4c68d8cc2f8af75961ab4c98a
 202 b29e3f6fd325627e3b77475f1c0148ce298fa2a4c68d8cc2f8af75961ab4c98a
 ```
 
-## anti-leak checks
+## проверки на утечку
 
-Commands:
+команды:
 
 ```bash
 git status --porcelain | grep -E '\.parquet$' || true
@@ -112,7 +114,7 @@ grep -Rni "min.support\|min_support" src/features.py tests/test_features.py || t
 make leak-check
 ```
 
-Output:
+вывод:
 
 ```text
 # parquet status: empty
@@ -125,21 +127,23 @@ checking tracked and staged file list
 leak-check passed
 ```
 
-## b02-fix F1 monetary proxy check
+## b02-fix f1: денежный прокси-признак
 
-Command:
+проверяю, что monetary_proxy_count считается как число событий с непустым revenue_proxy (а не как полная частота событий), и что значение совпадает с честным pit-расчетом.
+
+команда:
 
 ```bash
 python3 -c "from src.features import build_and_store; print(build_and_store(['2024Q4','2025Q3','2025Q4']))"
 ```
 
-Output:
+вывод:
 
 ```text
-/home/x39963/web/niki/mo-dz/ml005/data/feature_store
+data/feature_store
 ```
 
-Command:
+команда:
 
 ```bash
 python3 - <<'PY'
@@ -165,7 +169,7 @@ assert not features['monetary_proxy_count'].equals(features['freq_events_total']
 PY
 ```
 
-Output:
+вывод:
 
 ```text
 rows 11976
@@ -174,6 +178,4 @@ equal_expected True
 same_as_freq False
 ```
 
-Note: `feature_list.hash` remains unchanged by design because it is based on
-feature names, dtypes, and order only. The JSON was regenerated at
-`2026-05-31 21:42:37 MSK`.
+примечание: feature_list.hash по задумке не меняется - он считается только по именам фич, их типам и порядку. сам json при этом пересобрался.

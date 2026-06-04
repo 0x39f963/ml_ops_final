@@ -1,18 +1,16 @@
-# b01 Verification Log
+# b01 - проверка каркаса
 
-This is the initial b01 scaffold log. Current follow-up evidence for F1-F4
-and the 40000-row synthetic stub is in
-`reports/b01_followup_f1_f4_verification_log.md`.
+это лог по первой версии каркаса b01. свежие проверки по пунктам f1-f4 и стаб на 40000 строк - в [b01_followup_f1_f4_verification_log.md](b01_followup_f1_f4_verification_log.md).
 
-## make data
+## генерация синтетики
 
-Command:
+команда:
 
 ```bash
 make data
 ```
 
-Output:
+вывод:
 
 ```text
 python3 -m src.gen_synthetic --rows 5000 --out data/sample_synth.parquet
@@ -23,15 +21,15 @@ fam_box_share=0.8500
 inn_is_pseudo_share=0.2200
 ```
 
-## smoke generator
+## смоук генератора на 100 строк
 
-Command:
+команда:
 
 ```bash
 python3 -m src.gen_synthetic --rows 100 --out /tmp/_smoke.parquet
 ```
 
-Output:
+вывод:
 
 ```text
 path=/tmp/_smoke.parquet
@@ -41,29 +39,29 @@ fam_box_share=0.8500
 inn_is_pseudo_share=0.2200
 ```
 
-## import wrapper
+## импорт обертки данных
 
-Command:
+команда:
 
 ```bash
 python3 -c "import src.data_wrappers; print('ok')"
 ```
 
-Output:
+вывод:
 
 ```text
 ok
 ```
 
-## schema check
+## проверка схемы сэмпла
 
-Command:
+команда:
 
 ```bash
 python3 -c "import pandas as pd; df=pd.read_parquet('data/sample_synth.parquet'); print(df.shape); print(sorted(df.columns)); print((df.product_family=='FAM_BOX').mean()); print(df.inn_is_pseudo.mean())"
 ```
 
-Output:
+вывод:
 
 ```text
 (5000, 10)
@@ -72,44 +70,40 @@ Output:
 0.22
 ```
 
-## wrapper cutoff smoke
+## смоук cutoff в обертке
 
-Command:
+команда:
 
 ```bash
 python3 -c "from src.data_wrappers import load_events, normalize_client_id; df=load_events('2020-12-31'); print(df.shape); print(normalize_client_id(' C 123 '))"
 ```
 
-Output:
+вывод:
 
 ```text
 (1190, 10)
 C123
 ```
 
-## compile smoke
+## компиляция
 
-Command:
+команда:
 
 ```bash
 python3 -m compileall -q src
 ```
 
-Output:
+вывод пустой, ошибок компиляции нет.
 
-```text
+## размер сэмпла
 
-```
-
-## sample size
-
-Command:
+команда:
 
 ```bash
 du -h data/sample_synth.parquet
 ```
 
-Output:
+вывод:
 
 ```text
 112K	data/sample_synth.parquet
@@ -117,13 +111,13 @@ Output:
 
 ## leak-check
 
-Command:
+команда:
 
 ```bash
 make leak-check
 ```
 
-Output:
+вывод:
 
 ```text
 checking gitignore gates
@@ -131,31 +125,33 @@ checking tracked and staged file list
 leak-check passed
 ```
 
-Exit code: 0.
+код возврата 0.
 
-## test
+## тесты
 
-Command:
+команда:
 
 ```bash
-make -C /home/x39963/web/niki/mo-dz/ml005 test
+make test
 ```
 
-Output:
+вывод:
 
 ```text
 no tests yet
 ```
 
+тестов на этом шаге еще нет, добавляю их в следующих ветках.
+
 ## git status
 
-Command:
+команда:
 
 ```bash
 git status --short
 ```
 
-Output:
+вывод:
 
 ```text
 A  .env.example
@@ -181,4 +177,4 @@ A  src/gen_synthetic.py
 A  tests/.gitkeep
 ```
 
-Note: this shell has `python3` but no `python` command. The module CLI and import smoke passed with `python3`; environments with `python` alias can use the exact `python -m ...` contract.
+примечание: в этом окружении есть python3, но нет алиаса python. cli модулей и импорт-смоук прошли на python3; там где алиас python настроен, контракт python -m ... работает так же.

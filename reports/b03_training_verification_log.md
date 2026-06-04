@@ -1,21 +1,21 @@
-Updated at: 2026-05-31 22:24:55 MSK
+# b03 - проверка обучения
 
-## b03 training verification log
+лог по обучению b03: cli train, артефакты модели, воспроизводимость, активация co-occurrence в champion, проверки на утечку.
 
 ## cli train
 
-Command:
+команда:
 
 ```bash
 python3 -m src.train --quarter 2021Q4 --backend logreg
 ```
 
-Output summary:
+краткий вывод:
 
 ```text
 MLflow logging skipped: MLFLOW_TRACKING_URI is empty.
-model_path: /home/x39963/web/niki/mo-dz/ml005/models/model.pkl
-meta_path: /home/x39963/web/niki/mo-dz/ml005/models/meta.json
+model_path: models/model.pkl
+meta_path: models/meta.json
 metrics:
   n_train_rows: 32814
   n_holdout_rows: 5555
@@ -27,15 +27,15 @@ metrics:
 run_id: nbo_train_20260531_190439
 ```
 
-## model dir
+## папка с моделью
 
-Command:
+команда:
 
 ```bash
 ls -la models
 ```
 
-Output:
+вывод:
 
 ```text
 meta.json
@@ -43,30 +43,32 @@ model.pkl
 product_catalog.json
 ```
 
-## meta keys and load
+## ключи meta и загрузка модели
 
-Command:
+команда:
 
 ```bash
 python3 -c "import json,joblib; m=json.load(open('models/meta.json')); print(sorted(m.keys())); a=joblib.load('models/model.pkl'); print(sorted(a.keys()), a['active'])"
 ```
 
-Output:
+вывод:
 
 ```text
 ['backend', 'created_at', 'feature_list', 'feature_list_hash', 'lib_versions', 'metrics', 'min_support', 'product_catalog', 'seed']
 ['active', 'challenger', 'champion'] champion
 ```
 
-## gitignore gate
+## гейт gitignore на артефакты модели
 
-Command:
+проверяю, что байты модели не уходят в git.
+
+команда:
 
 ```bash
 git check-ignore models/model.pkl models/meta.json models/product_catalog.json
 ```
 
-Output:
+вывод:
 
 ```text
 models/model.pkl
@@ -76,13 +78,13 @@ models/product_catalog.json
 
 ## status
 
-Command:
+команда:
 
 ```bash
 git status --porcelain
 ```
 
-Output:
+вывод:
 
 ```text
  M .env.example
@@ -98,39 +100,35 @@ Output:
 ?? tests/test_train_smoke.py
 ```
 
-Note: `.gitignore`, `artifacts/`, `src/features.py`, `tests/test_features.py`,
-and `reports/b02_feature_store_verification_log.md` are b01/b02 dirty state
-observed before b03 edits.
+примечание: `.gitignore`, `artifacts/`, `src/features.py`, `tests/test_features.py` и `reports/b02_feature_store_verification_log.md` - это незакоммиченное состояние b01/b02, оно осталось с прошлых веток до правок b03.
 
-## tests
+## тесты
 
-Command:
+команда:
 
 ```bash
 python3 -m pytest tests/test_features.py tests/test_train_smoke.py -q
 ```
 
-Output:
+вывод:
 
 ```text
 11 passed in 13.22s
 ```
 
-Command:
+команда:
 
 ```bash
 python3 -m compileall -q src tests
 ```
 
-Output:
+вывод пустой, код возврата 0.
 
-```text
-no output, exit code 0
-```
+## воспроизводимость
 
-## determinism
+на одном сиде дважды обучаю модель - feature_list_hash и каталог продуктов должны совпасть.
 
-Command:
+команда:
 
 ```bash
 python3 - <<'PY'
@@ -147,7 +145,7 @@ print('catalog_size', len(meta_2['product_catalog']))
 PY
 ```
 
-Output:
+вывод:
 
 ```text
 MLflow logging skipped: MLFLOW_TRACKING_URI is empty.
@@ -157,15 +155,15 @@ same_product_catalog True
 catalog_size 25
 ```
 
-## leak check
+## leak-check
 
-Command:
+команда:
 
 ```bash
 make leak-check
 ```
 
-Output:
+вывод:
 
 ```text
 checking gitignore gates
@@ -173,23 +171,25 @@ checking tracked and staged file list
 leak-check passed
 ```
 
-## b03-fix tests
+## b03-fix: тесты
 
-Command:
+команда:
 
 ```bash
 python3 -m pytest tests/test_features.py tests/test_train_smoke.py -q
 ```
 
-Output:
+вывод:
 
 ```text
 13 passed in 13.29s
 ```
 
-## b03-fix feature hash invariance
+## b03-fix: инвариантность feature hash
 
-Command:
+проверяю, что после пересборки feature store hash не меняется и совпадает со схемным hash из feature_list.json.
+
+команда:
 
 ```bash
 python3 - <<'PY'
@@ -211,11 +211,11 @@ print('equals_schema_hash', after == feature_list['hash'])
 PY
 ```
 
-Output:
+вывод:
 
 ```text
 MLflow logging skipped: MLFLOW_TRACKING_URI is empty.
-store /home/x39963/web/niki/mo-dz/ml005/data/feature_store
+store data/feature_store
 meta_hash b29e3f6fd325627e3b77475f1c0148ce298fa2a4c68d8cc2f8af75961ab4c98a
 feature_list_hash_field b29e3f6fd325627e3b77475f1c0148ce298fa2a4c68d8cc2f8af75961ab4c98a
 recomputed_hash b29e3f6fd325627e3b77475f1c0148ce298fa2a4c68d8cc2f8af75961ab4c98a
@@ -223,9 +223,11 @@ same_after_regen True
 equals_schema_hash True
 ```
 
-## b03-fix co-occurrence activation
+## b03-fix: активация co-occurrence в champion
 
-Command:
+проверяю, что если клиент уже владеет продуктом, co-occurrence поднимает связанный продукт наверх (топ-1 меняется).
+
+команда:
 
 ```bash
 python3 - <<'PY'
@@ -254,7 +256,7 @@ print('co_activated', base[0][0] != with_owned[0][0])
 PY
 ```
 
-Output:
+вывод:
 
 ```text
 owned ['PROD_02']
@@ -263,16 +265,16 @@ with_owned_top1 ('PROD_03', 0.865)
 co_activated True
 ```
 
-## b03-fix leak check
+## b03-fix: leak-check
 
-Command:
+команда:
 
 ```bash
 git check-ignore models/model.pkl models/meta.json
 make leak-check
 ```
 
-Output:
+вывод:
 
 ```text
 models/model.pkl

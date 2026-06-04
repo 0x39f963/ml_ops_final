@@ -1,14 +1,16 @@
-# b01 Follow-up F1-F4 Verification Log
+# b01 - доработка f1-f4 (проверка)
 
-## make data
+лог по доработкам f1-f4 поверх каркаса b01: увеличенный синтетический стаб (40000 строк), проверка повторяемости продуктов и таргета на следующий квартал.
 
-Command:
+## генерация синтетики
+
+команда:
 
 ```bash
 make data
 ```
 
-Output:
+вывод:
 
 ```text
 python3 -m src.gen_synthetic --rows 40000 --out data/sample_synth.parquet
@@ -21,9 +23,9 @@ products_recurrence_ge_15=39
 next_quarter_positive_pairs=11332
 ```
 
-## schema and recurrence check
+## проверка схемы и повторяемости
 
-Command:
+команда:
 
 ```bash
 python3 - <<'PY'
@@ -44,7 +46,7 @@ print(int((per_product >= 15).sum()), int(events.recur.sum()), round((counts <= 
 PY
 ```
 
-Output:
+вывод:
 
 ```text
 (40000, 10)
@@ -54,15 +56,15 @@ Output:
 39 11332 0.7111 37
 ```
 
-## wrapper smoke
+## смоук обертки данных
 
-Command:
+команда:
 
 ```bash
 python3 -c "import src.data_wrappers as w; print('import ok'); print(w.load_events('2020-12-31').shape); print(w.load_segment_timeline('2020-12-31').shape); print(w.load_scoring_registry().shape); print(w.normalize_client_id(' C 123 '))"
 ```
 
-Output:
+вывод:
 
 ```text
 import ok
@@ -72,15 +74,15 @@ import ok
 C123
 ```
 
-## generator smoke
+## смоук генератора на 100 строк
 
-Command:
+команда:
 
 ```bash
 python3 -m src.gen_synthetic --rows 100 --out /tmp/_smoke.parquet
 ```
 
-Output:
+вывод:
 
 ```text
 path=/tmp/_smoke.parquet
@@ -92,43 +94,39 @@ products_recurrence_ge_15=0
 next_quarter_positive_pairs=25
 ```
 
-## sample size
+## размер сэмпла
 
-Command:
+команда:
 
 ```bash
 du -h data/sample_synth.parquet
 ```
 
-Output:
+вывод:
 
 ```text
 724K	data/sample_synth.parquet
 ```
 
-## compile smoke
+## компиляция
 
-Command:
+команда:
 
 ```bash
 python3 -m compileall -q src
 ```
 
-Output:
-
-```text
-
-```
+вывод пустой, ошибок компиляции нет.
 
 ## leak-check
 
-Command:
+команда:
 
 ```bash
 make leak-check
 ```
 
-Output:
+вывод:
 
 ```text
 checking gitignore gates
@@ -136,17 +134,17 @@ checking tracked and staged file list
 leak-check passed
 ```
 
-Exit code: 0.
+код возврата 0.
 
-## leak-check with name guard configured
+## leak-check с настроенным запретом на имя компании
 
-Command:
+команда:
 
 ```bash
 FORBIDDEN_COMPANY_NAME="$(printf 'local-check-%s' "$RANDOM")" make leak-check
 ```
 
-Output:
+вывод:
 
 ```text
 checking gitignore gates
@@ -155,20 +153,20 @@ checking FORBIDDEN_COMPANY_NAME
 leak-check passed
 ```
 
-Exit code: 0.
+код возврата 0.
 
-## parent repo ignore guard
+## проверка гейта игнора в родительском репозитории
 
-Command:
+команда:
 
 ```bash
 git status --short --untracked-files=normal | rg 'ml005|\.gitignore' || true
 ```
 
-Output:
+вывод:
 
 ```text
 ?? .gitignore
 ```
 
-Note: parent repo now reports the root `.gitignore` change only; `ml005/` is ignored and is no longer shown as an untracked nested repo.
+примечание: родительский репозиторий теперь показывает только изменение корневого .gitignore; папка ml005/ игнорируется и больше не висит как вложенный непроиндексированный репозиторий.
