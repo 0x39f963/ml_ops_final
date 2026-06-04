@@ -10,7 +10,7 @@
 - API contract: `nbo-api`, `/health`, `/score`, `/batch-score`, `/metrics`
 - pipeline contract: S3 key -> `feature_list.json` -> metric gate -> branch join
 
-В этом контуре cloud не поднимается. `cloud.tf` - P2-заглушка для ветки b12: провайдер пока [unknown], ресурсы полностью закомментированы, `terraform init/validate/plan` не требуют cloud credentials.
+В этом контуре cloud не поднимается. `cloud.tf` - заглушка для будущего облачного деплоя: провайдер пока не выбран, ресурсы полностью закомментированы, `terraform init/validate/plan` не требуют cloud credentials.
 
 ## Проверка
 

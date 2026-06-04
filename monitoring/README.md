@@ -68,8 +68,8 @@ Prometheus loads `monitoring/alerts/nbo_rules.yml`.
 
 Rules:
 
-- `NBOHighErrorRate`: critical when `/score` error-rate > 3 percent for 5m [assumption].
-- `NBOHighP95Latency`: critical when `/score` p95 latency > 800 ms for 5m [assumption].
+- `NBOHighErrorRate`: critical when `/score` error-rate > 3 percent for 5m (threshold preliminary, calibrate on baseline).
+- `NBOHighP95Latency`: critical when `/score` p95 latency > 800 ms for 5m (threshold preliminary, calibrate on baseline).
 
 Recording rules:
 
@@ -99,4 +99,4 @@ Returned keys include:
 - `psi_max`
 - `generated_at`
 
-Current DAG state: [assumption] Airflow Prometheus exporter is not configured in the current `docker-compose.yml`. The Grafana DAG success panel is a text note until b07/b09 adds statsd-exporter or an Airflow Prometheus exporter.
+Current DAG state: the Airflow Prometheus exporter is not configured in this `docker-compose.yml`, so the Grafana DAG success panel stays a text note. A statsd-exporter or an Airflow Prometheus exporter would turn it into a PromQL panel.
