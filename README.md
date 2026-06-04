@@ -159,7 +159,7 @@ docker compose up -d airflow   # ui http://localhost:8080
 - prometheus скрейпит `nbo-api:8000/metrics` + node-exporter, держит alert-правила (p95 latency, error-rate).
 - grafana авто-провижинит дашборд `nbo_overview`: p95/p99 latency, error-rate, rps, drift share.
 - evidently/drift: считаю data drift + psi на выходах пайплайна, пишу html-отчет + `nbo_drift.prom` для node-exporter (живая drift-метрика). вызывается standalone и шагом из dag.
-- sli/slo на 3 уровнях (технический / модель-данные / бизнес) с порогами и incident-action: [docs/sli_slo.md](docs/sli_slo.md). числовые пороги помечены [assumption] до калибровки на baseline.
+- sli/slo на 3 уровнях (технический / модель-данные / бизнес) с порогами и incident-action: [docs/sli_slo.md](docs/sli_slo.md). числовые пороги помечены как предварительные, до калибровки на baseline.
 
 ```bash
 docker compose up -d prometheus grafana node-exporter   # grafana http://localhost:3000 (admin/admin), prometheus http://localhost:9090
@@ -253,6 +253,10 @@ demo: ввел клиента, получил топ-10 продуктов с в
 
 ![airflow run](screenshots/airflow_dag_run.png)
 
+модель и прогоны обучения версионируются в mlflow - эксперимент `nbo_topn`, список прогонов, зарегистрированная модель `nbo_topn` версии 1:
+
+![mlflow experiments](screenshots/mlflow_experiments.png)
+
 ### 3. создание ML-системы (критерий C3)
 
 в работе требуется реализовать систему через IaC, чтобы все компоненты работали: для backend показать `docker ps` со статусом Up(healthy), для frontend - доступный `/health` с кодом 200.
@@ -267,11 +271,21 @@ demo: ввел клиента, получил топ-10 продуктов с в
 
 ![health 200](screenshots/api_health.png)
 
+ci (github actions) зеленый - job checks (компиляция + смоук на синтетике) и job terraform (fmt / validate / plan):
+
+![ci green](screenshots/ci_green.png)
+
 ### 4. управление рисками (критерий C4)
 
 в работе требуется сформулировать SLI на трех уровнях (технический, модельный, бизнес) и задать критические пороги SLO.
 
 я подготовил это документом [docs/sli_slo.md](docs/sli_slo.md): все три уровня, у каждого показателя норма / тревога / авария, действие при срабатывании и источник метрики (prometheus / evidently / состояние dag). сбор метрик - prometheus + grafana + evidently (дрейф данных), конфиги в [monitoring/](monitoring/).
+
+как доказательство, что мониторинг живой: prometheus собирает метрики, все таргеты UP (nbo-api, node_exporter, prometheus):
+
+![prometheus targets](screenshots/prometheus_targets.png)
+
+а технический порог по latency я не просто записал, а проверил нагрузочным тестом: 50000 одиночных `POST /score`, все ответы 200, 0 клиентских таймаутов, p95 289 мс (целевой slo p95 < 500 мс выполняется). разбор эксперимента и показания дашборда grafana - в [reports/load_test.md](reports/load_test.md).
 
 ### 5. принятие решений по MDD (критерий C5)
 

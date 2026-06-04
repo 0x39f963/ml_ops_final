@@ -37,6 +37,11 @@
 
 ![airflow run](airflow_dag_run.png)
 
+### Эксперименты и модель в MLflow (C2)
+Эксперимент `nbo_topn`: прогоны обучения и зарегистрированная модель `nbo_topn` версии 1. Версионирование и переключение champion/challenger идет через alias.
+
+![mlflow](mlflow_experiments.png)
+
 ---
 
 ## Инфраструктура
@@ -50,6 +55,22 @@
 Потребление ресурсов: контейнеры NBO (в красной рамке) живые и работают.
 
 ![docker stats](docker_stats.png)
+
+### CI зеленый (C3)
+GitHub Actions: job checks (компиляция + смоук на синтетике) и job terraform (fmt / validate / plan).
+
+![ci green](ci_green.png)
+
+---
+
+## Мониторинг
+
+### Prometheus targets UP (C4)
+Все таргеты подняты: `nbo-api`, `node_exporter`, `prometheus`.
+
+![prometheus targets](prometheus_targets.png)
+
+Дашборд Grafana `nbo_overview` и нагрузочный тест online scoring разобраны в отчете [reports/load_test.md](../reports/load_test.md).
 
 ---
 
